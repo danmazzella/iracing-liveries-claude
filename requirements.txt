@@ -1,0 +1,5 @@
+pillow>=11
+numpy>=2
+scipy>=1.13
+psd-tools>=1.10
+opencv-python-headless>=4.10   # only needed for projecting a reference image

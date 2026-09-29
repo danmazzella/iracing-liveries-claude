@@ -1,0 +1,31 @@
+# Allowlist: ignore everything at the top level, then share only what's listed below.
+# Any new livery folder you create stays private unless you add it here.
+/*
+!/.gitignore
+!/README.md
+!/CLAUDE.md
+!/LIVERY_GUIDE.md
+!/requirements.txt
+!/cars/
+!/tools/
+!/example/
+!/logos/
+
+# Logos: only the README is shared, logo files stay private
+/logos/*
+!/logos/README.md
+
+# Never shared, wherever they are:
+# iRacing templates (download your own), build output, python/OS clutter
+*.psd
+out/
+__pycache__/
+*.pyc
+.DS_Store
+.venv/
+CLAUDE.local.md
+tools/.customer_id
+
+# Big regenerable files (tools/uvcode.py rebuilds uvcode.tga)
+cars/*/uvcode.tga
+cars/*/grid_old_*.tga
