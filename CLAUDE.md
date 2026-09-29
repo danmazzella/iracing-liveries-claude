@@ -22,6 +22,18 @@ Run scripts with the venv's python from inside the livery folder, e.g.
 
 @LIVERY_GUIDE.md
 
+## First-time setup (when a new user asks to get started)
+
+Most users will just say "read the docs and get me set up". Check each item and fix or guide
+them through it, one step at a time, in plain language:
+1. Their OS (Windows with iRacing, or a Mac building for a Windows PC).
+2. Python 3 installed; `.venv` exists with `requirements.txt` installed (create it for them).
+3. The car's `.psd` template is in the repo root (they download it from iRacing; list what's
+   there). The car is mapped in `cars/<car>/`? If not, mapping comes first.
+4. Their iRacing customer ID (for the installer, which remembers it).
+5. Build `example/` for their car as a smoke test, show them how to install it, then ask what
+   livery they want.
+
 ## Rules for Claude
 
 - **Map a car before designing on it** (LIVERY_GUIDE section 4). If `cars/<car>/` doesn't exist,

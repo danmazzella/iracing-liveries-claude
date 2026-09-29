@@ -1,9 +1,27 @@
 # Make iRacing liveries with Claude Code
 
-This folder is a toolkit + a notebook of everything we learned making custom iRacing paint
-schemes ("liveries") with **Claude Code**, an AI assistant that can read and write files and run
-programs on your computer. You describe the livery you want; Claude writes a small Python program
-that draws it; you try it in the sim and tell Claude what to fix.
+Describe the livery you want, and Claude builds it for you. This folder holds everything we
+learned making our own iRacing paints with **Claude Code** (an AI assistant that works with the
+files on your computer), so Claude can skip the trial and error and get straight to your design.
+
+## Quick start
+
+1. **Download this folder**: green **`<> Code`** button at the top of this page → **Download ZIP** → unzip it.
+2. **Install Claude Code**: <https://code.claude.com/docs/en/setup> (needs a paid Claude plan).
+3. **Open Claude in this folder** (open a terminal in the folder and type `claude`, or pick the
+   folder in the Claude desktop app's **Code** tab) and say something like:
+
+   > Read the README and the .md files in this folder, then get me set up to make an iRacing
+   > livery. I'm on Windows and I want to paint the BMW M4 GT3.
+
+Claude checks what's missing (Python, the car's paint template, your iRacing customer ID) and walks
+you through it. Then just describe your livery: colours, stripes, logos, a picture you like.
+Claude builds it, tells you how to install it, and fixes whatever you don't like after you try it
+in the sim.
+
+That's it. Everything below is detail, for when you're curious or something goes wrong.
+
+---
 
 **What's in here:**
 
@@ -11,15 +29,18 @@ that draws it; you try it in the sim and tell Claude what to fix.
   paint files are, which finish values look good, where things end up on the car, mistakes to avoid).
   Claude reads it automatically.
 - `cars/`: maps of the **BMW M4 GT3** and the **McLaren 720S GT3 EVO** (which part of the paint
-  file lands on which part of the car), with screenshots.
+  file lands on which part of the car), with screenshots. Other cars work too: Claude maps them first.
 - `tools/`: a mapping-grid maker for any car, and an installer that copies a paint into iRacing.
 - `example/`: a small working livery to start from.
 
 **What's not in here:** our own liveries, team logos, or iRacing's template files. You make your own.
 
-No coding experience needed. This guide assumes you've never used GitHub or Claude Code.
-
 ---
+
+# Detailed setup (step by step)
+
+Claude can do or explain all of this for you. It's here if you'd rather do it yourself, or
+want to know what's going on. No coding experience needed.
 
 ## What you need
 
