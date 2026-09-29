@@ -6,7 +6,7 @@ param(
     [string]$Project = "",     # livery folder in the repo, e.g. example, mylivery
     [string]$Car = "",         # car key from cars\ (bmw, mclaren) or an iRacing paint folder name
     [string]$Build = "",       # build tag, e.g. 1 or v3; default = newest build in <project>\out
-    [ValidateSet("gloss", "metal", "chrome")] [string]$Finish = "gloss",
+    [string]$Finish = "gloss",   # any _spec_<name>.tga the build has
     [string]$CustomerId = "",  # remembered after the first use
     [switch]$Grid,             # install cars\<car>\grid.tga (mapping grid, no spec)
     [string]$File = "",        # install this paint file instead (any path)
@@ -49,7 +49,7 @@ function Show-Help {
 install_paint.ps1: copy a livery into iRacing's paint folder.
 
 USAGE (run from anywhere)
-  .\install_paint.ps1 -Project <folder> -Car <car> [-Build <tag>] [-Finish gloss|metal|chrome] [-CustomerId <id>]
+  .\install_paint.ps1 -Project <folder> -Car <car> [-Build <tag>] [-Finish <name>] [-CustomerId <id>]
   .\install_paint.ps1 -Car <car> -Grid                  install the car's mapping grid
   .\install_paint.ps1 -Car <car> -File <paint.tga> [-SpecFile <spec.tga>]
   .\install_paint.ps1 -Project <folder> [-Car <car>] -List    show available builds
@@ -58,7 +58,8 @@ OPTIONS
   -Project     livery folder in this repo. Files come from <folder>\out\<folder>_<car>_<build>.tga
   -Car         car key (below) or an iRacing paint folder name (Documents\iRacing\paint\...)
   -Build       build tag (e.g. 1, v3). Leave out to install the newest build.
-  -Finish      which spec file: gloss = _spec.tga, metal = _spec_metal.tga, chrome = _spec_chrome.tga
+  -Finish      which spec file: gloss = _spec.tga, anything else = _spec_<name>.tga (e.g. metal,
+               chrome, gold). -List shows the finishes each build has
   -CustomerId  your iRacing customer ID (iRacing account page). Remembered after the first time.
   -Grid        install cars\<car>\grid.tga, the labelled grid for mapping a car
   -File        install any paint .tga (optional -SpecFile for its spec)
@@ -146,7 +147,11 @@ if ($Grid) {
     $suffix = if ($Finish -eq "gloss") { "" } else { "_$Finish" }
     $spec = Join-Path $out "${base}_spec$suffix.tga"
     if (-not (Test-Path $spec)) {
-        if ($PSBoundParameters.ContainsKey("Finish")) { throw "Missing spec file: $spec" }
+        if ($PSBoundParameters.ContainsKey("Finish")) {
+            $have = Get-ChildItem $out -Filter "${base}_spec*.tga" |
+                ForEach-Object { ($_.BaseName -replace '^.*_spec_?', '') } | ForEach-Object { if ($_) { $_ } else { "gloss" } }
+            throw "No '$Finish' finish for $base. This build has: $($have -join ', ')"
+        }
         Write-Host "No spec file ($spec): installing the paint without one." -ForegroundColor Yellow
         $spec = $null
     }

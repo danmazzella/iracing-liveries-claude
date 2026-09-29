@@ -1,8 +1,8 @@
 # iRacing livery guide: everything we learned
 
-Distilled from three complete liveries built in this repo with Claude Code (a vector team
-livery with hex tiles, an art-car collage, and a CFD "wind tunnel" livery), across two cars
-(BMW M4 GT3, McLaren 720S GT3 EVO) and ~40 in-sim test rounds. Every fact here was checked
+Distilled from the liveries built in this repo with Claude Code (a vector team
+livery with hex tiles, an art-car collage, a CFD "wind tunnel" livery, and a retro JPS-style
+F1 livery), across three cars (BMW M4 GT3, McLaren 720S GT3 EVO, Lotus 79) and ~40 in-sim test rounds. Every fact here was checked
 in the sim unless it says otherwise.
 
 Read this first, then `cars/<car>/README.md` for the car you're painting.
@@ -44,7 +44,7 @@ Installer: `tools/install_paint.ps1 -Project <livery> -Car <car> [-Build N] [-Fi
 - **iRacing draws the car number** on the template's number blocks. Never paint numbers.
   Leave the number block areas plain (or put a clean card behind them).
 - Wheel colour and tyre sidewall colour are set in iRacing's paint screen, not in our files.
-- Car folders found so far: BMW M4 GT3 = `bmwm4gt3`, McLaren 720S GT3 EVO = `mclaren720sgt3`.
+- Car folders found so far: BMW M4 GT3 = `bmwm4gt3`, McLaren 720S GT3 EVO = `mclaren720sgt3`, Lotus 79 = `lotus79`, Formula IR04 (F4) = `formulair04`.
   For another car, look in `Documents\iRacing\paint\` (the folder appears once you've
   driven the car).
 - Your customer ID is on your iRacing account page.
@@ -102,6 +102,11 @@ So map every new car first:
    `cars/<key>/README.md` with the line ``iRacing paint folder: `<folder>` `` (the installer reads it).
 2. Install it: `tools/install_paint.ps1 -Car <key> -Grid`. In the sim take screenshots: front, front 3/4, both
    sides, rear, rear 3/4, top. Save them in `cars/<car>/` as `grid_<view>.webp`.
+   **If a part's labels aren't readable (hidden, too small, edge-on), Claude asks for more
+   angles** instead of guessing: close-ups (halo, mirrors, cockpit rim), low front/rear (wing
+   undersides, diffuser), straight-on of the other side. List what's still unmapped in the README.
+   The paint-screen camera is limited (no low or underside views): ask only for what it can
+   reach (zoomed top-down, close-ups from above, the preset side/front/rear views).
 3. Read the labels in each screenshot and write a **part → columns/rows table** in
    `cars/<car>/README.md` (see the BMW and McLaren ones). Note the mirror line, the
    orientation of the bumpers (the BMW front bumper's x runs bottom→top), and what 3D parts
@@ -109,7 +114,12 @@ So map every new car first:
 4. Keep a "Proven placements" and a "Gotchas" section in that README and add to it after
    every in-sim round.
 
-Already mapped here: **BMW M4 GT3** (`cars/bmw/`), **McLaren 720S GT3 EVO** (`cars/mclaren/`).
+Already mapped here: **BMW M4 GT3** (`cars/bmw/`), **McLaren 720S GT3 EVO** (`cars/mclaren/`), **Lotus 79** (`cars/lotus79/`), **Formula IR04 / F4** (`cars/ir04/`).
+
+Some templates' `Mask` covers almost nothing. The panel (UV island) outlines are then drawn in the
+wireframe layer (Lotus 79: pure green lines in `Wire`): label the regions enclosed by them to get
+each panel as a mask, and pick panels with a seed point. Check that a seed didn't land on the
+background (it silently grabs the whole sheet).
 
 Failed alternative: a colour-coded paint where each pixel's colour encodes its own sheet
 position (`tools/uvcode.py`). Garage lighting shifts colours enough to throw the decode off
@@ -136,6 +146,7 @@ What we measured in the sim (values 0-255):
 | Orange, vivid | **0** | 4 | most vivid: any metallic greys orange out in garage light |
 | Orange under "metal"/"chrome" finish | up to ~170 | 2-6 | OK on a bright base (`#FF7300`); 235 went too dark |
 | Chrome | 160-245 | 2 | strong reflections; colours get darker off-angle |
+| Orange pinstripes as "gold leaf" (on navy) | 150 | 4 | darker bronze-gold orange: a retro JPS gold look (Lotus 79) |
 
 Rules of thumb:
 - **Metallic darkens coloured paint** (reflections replace the base colour). Bright, saturated
@@ -193,6 +204,13 @@ Rules of thumb:
 - Busy texture (random tiles, speed bars) looks messy on small panels like bumpers. Keep them calm.
 - Thin lines can read as plain grey from distance; check line art in-sim.
 - Render at 2x and downsample for anti-aliasing.
+- **Pinstripes/coachlines that follow panel edges**: take the panel mask (see section 4), then
+  either the distance transform inside it (a band at distance d..d+w = an inset frame) or, for
+  one edge only, the per-column top/bottom edge smoothed and offset. They follow the real panel
+  shape for free. Leave out UV seam edges that aren't real panel edges (limit the frame by x).
+  Stacked offset stripes in shades of one colour ("sunset stripes") gave a 70s car its pizazz.
+- Tilted text: fit the text to its box first, then rotate. Fitting the rotated bounding box
+  shrinks long lettering badly (a 4-degree tilt on a 470 px line cost half the letter height).
 - `Image.thumbnail` never upscales. Use a resize-to-fit helper that rotates first, then scales
   (up or down) to the box, so the box is given in sheet axes:
   ```python
