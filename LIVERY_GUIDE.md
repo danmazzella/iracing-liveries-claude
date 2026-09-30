@@ -328,8 +328,8 @@ Rules of thumb:
   rejected). Applies to **every car and livery**; set it this way from the first build. Values in use:
   BMW rot 0 (box 1385-2040 x 312-598), McLaren rot 0 (0-640 x 170-290), Ferrari rot 0, Lotus 79 rot -90,
   IR04 rot 0. **Roof logos too**: letter tops toward the rear (sheet +x when the front is on the left),
-  e.g. rot -90 for text across the BMW/McLaren roof (rot 90 = top toward the nose, rejected). Mascots
-  (the polkadot roof hornet) aren't covered by the rule unless the user says so.
+  e.g. rot -90 for text across the BMW/McLaren roof (rot 90 = top toward the nose, rejected). Roof
+  mascots too: the polkadot roof hornet was flipped the same way (rot 90 -> -90, head toward the rear).
 - Logo orientation: work out the rotation per spot (a hood mascot at rot 90 looked upside
   down; rot −90 was right). Put rotation in the per-car config and confirm in-sim.
 
