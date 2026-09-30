@@ -10,8 +10,11 @@ cars/<car>/README.md    per-car sheet map + proven placements + gotchas (READ FI
 cars/<car>/grid_*.webp  in-sim screenshots of the labelled test grid; grid.tga = the grid paint
 cars/bmw/projection/    grid-label correspondences per view (for projecting a reference image)
 tools/grid.py           list PSD layers / write the labelled mapping grid for any car
+tools/seams.py          seam ruler + seams.json readings -> unfolded canvas (LIVERY_GUIDE 4b)
 tools/install_paint.ps1 install -Project <livery> -Car <car> [-Build N] [-Finish ...] (Windows; no args = help)
+                        -Car <car> -Grid / -Seams / -SeamCheck installs a car's mapping paints
 tools/labelproj.py      project a reference image onto the sheet from grid labels
+tools/ora.py            write layered .ora files (GIMP/Krita) so a livery can be finished by hand
 example/livery.py       minimal working livery: start new liveries from this
 logos/                  the user's logos (only logos/README.md is shared)
 .venv/                  python env: pip install -r requirements.txt
@@ -38,6 +41,8 @@ them through it, one step at a time, in plain language:
 
 - **Map a car before designing on it** (LIVERY_GUIDE section 4). If `cars/<car>/` doesn't exist,
   start with the grid.
+- **Graphics that cross panel seams**: read those seams off the ruler first (LIVERY_GUIDE 4b),
+  then draw them on the unfolded canvas (`tools/seams.py`) instead of nudging by hand.
 - New livery = new folder `<name>/` with `livery.py`, `out/`, `reference/`, `final/` and a
   `CLAUDE.md` holding the design notes and a numbered version log (what changed, in-sim result).
 - After every in-sim round, write what was learned down: per-car facts in `cars/<car>/README.md`,

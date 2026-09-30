@@ -26,6 +26,7 @@ __pycache__/
 CLAUDE.local.md
 tools/.customer_id
 
-# Big regenerable files (tools/uvcode.py rebuilds uvcode.tga)
+# Big regenerable files (tools/uvcode.py rebuilds uvcode.tga, tools/seams.py check rebuilds seamcheck.tga)
 cars/*/uvcode.tga
+cars/*/seamcheck.tga
 cars/*/grid_old_*.tga

@@ -222,6 +222,12 @@ Claude makes a **grid paint**: coloured squares labelled with numbers. Install i
 paint file lands where on the car, and writes that down in `cars/<car>/README.md`. Skipping this
 costs more time later: parts of the paint file are rarely where they look.
 
+Want stripes or graphics that run across several panels (hood onto bumper, door onto fender)?
+Ask Claude to **map the seams** too. It installs a "ruler" paint (`.\install_paint.ps1 -Car <car>
+-Seams`) with numbered marks along every panel edge. You take close-up screenshots where panels
+meet, and Claude reads which marks line up. From then on, lines drawn across those seams line up
+the first time.
+
 ---
 
 ## Getting updates
@@ -261,8 +267,9 @@ README.md             this guide
 LIVERY_GUIDE.md       everything we learned (Claude reads it via CLAUDE.md)
 CLAUDE.md             instructions Claude reads automatically when started in this folder
 requirements.txt      Python add-ons
-cars/<car>/           car maps, grid screenshots, grid paint (grid.tga)
+cars/<car>/           car maps, grid screenshots, grid paint (grid.tga), seam ruler (seams.tga)
 tools/grid.py         makes the mapping grid for a new car / lists template layers
+tools/seams.py        maps where panels meet, so graphics line up across them
 tools/install_paint.ps1   copies a paint into iRacing (Windows)
 tools/labelproj.py    advanced: projects a reference image onto the paint file
 example/livery.py     a minimal livery to start from

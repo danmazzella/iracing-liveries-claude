@@ -63,3 +63,8 @@ rows 17-21 showed up in the front shots); confirm with in-sim screenshots before
   copied/overwritten by the mirror. Draw both corners explicitly.
 
 - Door decals can't grow lengthwise: number card in front, LED position light behind.
+
+## Seams (tools/seams.py, LIVERY_GUIDE 4b)
+
+Seam ruler built: `seams.tga` (97 panels, codes in `seams_sheet.png`).
+Readings in `seams.json`: none yet. Add each seam read in-sim below (which seam, screenshot, checked?).

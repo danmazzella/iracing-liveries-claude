@@ -66,3 +66,8 @@ Right side listed; left side = mirror (`y' = 2519 - y`).
   gearbox at the rear. Keep key graphics off those spots.
 - iRacing draws the number on the nose (cols 4-5 rows 19-20) and on the rear of both sidepod
   sides (cols 20-22): leave those clear or put a card behind them.
+
+## Seams (tools/seams.py, LIVERY_GUIDE 4b)
+
+Seam ruler built: `seams.tga` (90 panels, codes in `seams_sheet.png`).
+Readings in `seams.json`: none yet. Add each seam read in-sim below (which seam, screenshot, checked?).

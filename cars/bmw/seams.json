@@ -1,0 +1,16 @@
+{"mirror_y": 1311.5,
+ "seams": [
+  {"name": "hood / front bumper, between the kidneys (seam_top_front.webp)",
+   "note": "one half only: the bumper edge detours round the roundel at the centre line (no contact there); mirror_y adds C11-C12",
+   "pairs": [["C8", "F55.42"], ["C9", "F54.24"], ["C10", "F52.28"]]},
+  {"name": "hood / front bumper, right corner (seam3_front.webp): C12 matches the mirrored left half (F48.95)",
+   "pairs": [["C12", "F48.94"], ["C13", "F47.96"]]},
+  {"name": "roof front / windshield banner (seam3_front.webp, tick bases at the seam)",
+   "note": "v1 read D1-K14.09.. from seam_top_front; v3 flipped the offsets (wrong: the v2 step came from a mirror-duplicate bug in the tool); re-read here, same sign as v1",
+   "pairs": [["D1", "K14.18"], ["D2", "K13.19"], ["D3", "K12.18"], ["D4", "K11.15"], ["D5", "K10.2"], ["D6", "K9.22"]]},
+  {"name": "roof side D / right roof rail B (seam2_side_right.webp)",
+   "pairs": [["D23", "B69.18"], ["D24", "B68.1"], ["D25", "B67.1"], ["D26", "B66.1"], ["D27", "B65.08"], ["D28", "B64.02"]]},
+  {"name": "hood C / right front fender top M (seam4_hood_fender_left.webp shows C0-C3 along the fender strip; fender labels too small)",
+   "note": "pairs from sheet adjacency (edges drawn 1-2 px apart, like the roof rails, which joined 1:1 in-sim), not from ticks: check with the stripe test",
+   "pairs": [["C0", "M14.47"], ["C1", "M12.92"], ["C2", "M11.09"], ["C3", "M8.92"]]}
+ ]}

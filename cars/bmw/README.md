@@ -89,3 +89,31 @@ smaller y = car's right side. The top side panel (rows 10–15) is upside down.
   seam is small there. A stripe at hood y 1435-1466 (x 262) needs bumper y ≈ 1437-1472 (scale
   1.04 about y 1311.5). Scaling by 1.186 (from the 1490<->1462 point by the headlight) put it
   ~20 px outboard in-sim, and no offset (plus a diagonal) put it inboard. v3 at 1.04 confirmed in-sim ("that works").
+
+## Seams (tools/seams.py, LIVERY_GUIDE 4b)
+
+Seam ruler built: `seams.tga` (93 panels, codes in `seams_sheet.png`). Main panels: `C` hood, `F` front bumper, `A` left side, `B` right side, `D` roof.
+Screenshots of the ruler: `seam_front`, `seam_top_front`, `seam_side_left`, `seam_side_right`,
+`seam_front34_right`, `seam_rear`, `seam_top_rear` (first ruler), `seam2_*` (ruler with the
+thin-strip fix), `seamcheck1_top` / `seamcheck1_front` (stripe test v1). All .webp, 2026-09-29.
+
+| Seam | Readings | Status |
+|---|---|---|
+| Hood C ↔ front bumper F, C7.5-C13 (headlights beyond) | C8↔F55.42, C9↔F54.24, C10↔F52.28 (+ mirror); right corner C12↔F48.94, C13↔F47.96 from `seam3_front` (C12 matches the mirrored left half to 0.01 segment) | ticks line up within ~0.1 segment: hood and bumper edges share the same sheet y there. Stripe test v1: position joined, stripes kinked/bent on the bumper (warp artefact, fixed in v2) |
+| Roof front D ↔ windshield banner K | D1↔K14.18 ... D6↔K9.22 (K runs the other way), re-read from `seam3_front` at the tick bases | v2 step and v3 torn stripes (`seamcheck3_front`) were a tool bug (duplicate mirror copy), not the readings; fixed. v4 to check. Some angle change stays: the banner bends down to the glass |
+| Roof side D ↔ roof rail B (right), mirrored to A (left) | D23↔B69.18 ... D28↔B64.02 (B runs the other way) | read from `seam2_side_right`. On the sheet the rail's edge sits 1-10 px from the roof's edge: nearly 1:1. **Mirror verified**: the left side read independently from `seam2_side_left` (D9↔A0.5, D10↔A96.44 ... D13↔A93.36; A's outer edge wraps A96 → A0) lands 5-9 px from the mirrored prediction |
+| Door front edge B28-B31 ↔ fender M/Y | - | **not a seam**: a 3D vent/gill sits between them (`seam3_side_right`) |
+| Hood C ↔ front fender tops M (right) / N (left, mirrored), C0-C3 | C0↔M14.47 ... C3↔M8.92 | fender-side labels too small to read (`seam4_hood_fender_left`), but the two edges are drawn 1-2 px apart on the sheet (like the roof rails, which joined 1:1 in-sim), so pairs come from the sheet. **Unverified in-sim.** Stops at C3: extending to C4 (by the headlight, where the fender edge turns a corner) made a 13:1 warp spike |
+| Trunk W ↔ rear bumper R/L | - | not read yet |
+
+Stripe test v4 (`seamcheck4_front.webp`): banner clean (no step, no tearing), hood → bumper
+continuous out to the headlights. User: "close enough for now". The BMW seam map is usable for
+designs across hood/bumper, roof/banner and roof/rails/sides.
+
+Stripe test v2 (`seamcheck2_*.webp`): hood → bumper clean (no step, no curl); roof → rails →
+sides → doors/rear quarters continuous, a few px jog at the roof edge; roof → banner stepped
+~13 px (fixed in v3, see table). Front fenders (M, N, Y), trunk and rear bumper not seamed yet.
+
+
+- The bumper's sheet edge detours round the roundel on the centre line: the hood and bumper
+  don't touch there, so no reading may span it. Read one half and let `mirror_y` add the other.

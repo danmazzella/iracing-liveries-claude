@@ -9,6 +9,8 @@ param(
     [string]$Finish = "gloss",   # any _spec_<name>.tga the build has
     [string]$CustomerId = "",  # remembered after the first use
     [switch]$Grid,             # install cars\<car>\grid.tga (mapping grid, no spec)
+    [switch]$Seams,            # install cars\<car>\seams.tga (seam ruler, tools\seams.py)
+    [switch]$SeamCheck,        # install cars\<car>\seamcheck.tga (seam stripe test)
     [string]$File = "",        # install this paint file instead (any path)
     [string]$SpecFile = "",    # ... with this spec file
     [switch]$List,             # list the builds found for -Project (and -Car)
@@ -51,6 +53,7 @@ install_paint.ps1: copy a livery into iRacing's paint folder.
 USAGE (run from anywhere)
   .\install_paint.ps1 -Project <folder> -Car <car> [-Build <tag>] [-Finish <name>] [-CustomerId <id>]
   .\install_paint.ps1 -Car <car> -Grid                  install the car's mapping grid
+  .\install_paint.ps1 -Car <car> -Seams                 install the seam ruler (-SeamCheck: the stripe test)
   .\install_paint.ps1 -Car <car> -File <paint.tga> [-SpecFile <spec.tga>]
   .\install_paint.ps1 -Project <folder> [-Car <car>] -List    show available builds
 
@@ -62,6 +65,8 @@ OPTIONS
                chrome, gold). -List shows the finishes each build has
   -CustomerId  your iRacing customer ID (iRacing account page). Remembered after the first time.
   -Grid        install cars\<car>\grid.tga, the labelled grid for mapping a car
+  -Seams       install cars\<car>\seams.tga, the seam ruler (tools\seams.py ruler <car>)
+  -SeamCheck   install cars\<car>\seamcheck.tga, the seam stripe test (tools\seams.py check <car>)
   -File        install any paint .tga (optional -SpecFile for its spec)
   -List        list builds for -Project instead of installing
 
@@ -124,16 +129,18 @@ if (-not (Test-Path $dest)) {
 
 # --- which files
 $spec = $null
-if ($Grid) {
-    $paint = Join-Path $Repo "cars\$Car\grid.tga"
+if ($Grid -or $Seams -or $SeamCheck) {
+    $name = if ($Grid) { "grid" } elseif ($Seams) { "seams" } else { "seamcheck" }
+    $paint = Join-Path $Repo "cars\$Car\$name.tga"
     if (-not (Test-Path $paint)) {
-        throw "No grid at $paint. Make one with tools\grid.py and save it there (or install it with -File)."
+        $how = if ($Grid) { "tools\grid.py" } elseif ($Seams) { "tools\seams.py ruler $Car" } else { "tools\seams.py check $Car" }
+        throw "No $name.tga at $paint. Make it with $how (or install any file with -File)."
     }
 } elseif ($File) {
     $paint = $File
     if ($SpecFile) { $spec = $SpecFile }
 } else {
-    if (-not $Project) { throw "Give a livery folder with -Project (or use -Grid / -File). Run with no options for help." }
+    if (-not $Project) { throw "Give a livery folder with -Project (or use -Grid / -Seams / -File). Run with no options for help." }
     $out = Join-Path (Join-Path $Repo $Project) "out"
     if (-not (Test-Path $out)) { throw "No output folder: $out. Build the livery first." }
     if ($Build) {

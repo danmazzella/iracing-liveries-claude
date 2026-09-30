@@ -44,8 +44,12 @@ def list_layers(psd):
 
 
 def layer(psd, name):
+    # topil + paste, not composite(): composite() comes back empty for hidden layers (the wire
+    # layer usually is)
     lyr = next(l for l in psd.descendants() if l.name == name and l.kind == "pixel")
-    return lyr.composite(viewport=(0, 0, SIZE, SIZE)).convert("RGBA")
+    full = Image.new("RGBA", (SIZE, SIZE))
+    full.paste(lyr.topil().convert("RGBA"), (lyr.left, lyr.top))
+    return full
 
 
 def font(size):
