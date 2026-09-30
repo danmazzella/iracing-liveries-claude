@@ -5,8 +5,12 @@ needs: load the template layers, draw in sheet coordinates, mirror side graphics
 upside-down right-side panel, composite the template trim on top, write the paint, a spec map
 and a preview with the not-paintable mask drawn over it.
 
+Each part is drawn on its own layer and also saved as layered OpenRaster files (.ora) that GIMP
+and Krita open: out/example_<car>.ora (paint) and _spec.ora (finish). Use them to finish a design
+by hand (LIVERY_GUIDE section 11).
+
     cd example
-    ../.venv/bin/python livery.py bmw         -> out/example_bmw.tga, _spec.tga, _preview.png
+    ../.venv/bin/python livery.py bmw         -> out/example_bmw.tga, _spec.tga, _preview.png, .ora, _spec.ora
     ../.venv/bin/python livery.py mclaren
 
 Read ../LIVERY_GUIDE.md and ../cars/<car>/README.md before placing anything.
@@ -19,6 +23,9 @@ from PIL import Image, ImageDraw
 from psd_tools import PSDImage
 
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, os.path.join(REPO, "tools"))
+import ora  # noqa: E402
+
 OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "out")
 SIZE = 2048
 
@@ -26,10 +33,12 @@ SIZE = 2048
 CARS = {
     "bmw": dict(psd="BMW M4 GT3.psd", mask="Mask", trim="Carbon Fiber", top="Car_decal",
                 rough=("Custom Spec", "rough"), mirror_y=1311.5,
+                guides=dict(wire="wire", numbers="Number Blocks", sponsors="Sponsor"),
                 # left side, door/sill band (upright panel, larger y = car's left)
                 stripe=dict(x0=560, x1=1800, y_top=1760, y_bot=1900)),
     "mclaren": dict(psd="McLaren 720s EVO GT3.psd", mask="Mask", trim="Car_decal", top=None,
                     rough=("Custom Spec Map", "Green Channel Roughness"), mirror_y=1206.5,
+                    guides=dict(wire="Wire", numbers="Number Blocks", sponsors="Sponsor Blocks"),
                     stripe=dict(x0=330, x1=1700, y_top=1760, y_bot=1880)),
 }
 BASE, STRIPE = "#F4F4F0", "#1E6FD9"      # body colour, graphic colour
@@ -40,7 +49,8 @@ def layer(psd, name):
     if name is None:
         return Image.new("RGBA", (SIZE, SIZE))
     lyr = next(l for l in psd.descendants() if l.name == name and l.kind == "pixel")
-    return lyr.composite(viewport=(0, 0, SIZE, SIZE)).convert("RGBA")
+    # layer_filter: also render the hidden guide layers (Wire, Number Blocks...)
+    return lyr.composite(viewport=(0, 0, SIZE, SIZE), layer_filter=lambda l: True).convert("RGBA")
 
 
 def spec_group(psd, group, sub):
@@ -70,7 +80,6 @@ def build(key):
     psd = PSDImage.open(os.path.join(REPO, car["psd"]))
     mask, trim, top = layer(psd, car["mask"]), layer(psd, car["trim"]), layer(psd, car["top"])
 
-    img = Image.new("RGBA", (SIZE, SIZE), BASE)
     shape = Image.new("L", (SIZE, SIZE))              # where the stripe is, for the spec map
     d = ImageDraw.Draw(shape)
 
@@ -84,22 +93,45 @@ def build(key):
     # Centre stripe over hood, roof and trunk: symmetric about the mirror line already
     d.rectangle((0, mid - 45, SIZE, mid + 45), fill=255)
 
-    img.paste(STRIPE, mask=shape)
-    img.alpha_composite(trim)                          # carbon/black trim over the paint
-    img.alpha_composite(top)                           # template decals that must stay on top
+    # One layer per part, bottom -> top. The TGA is the flattened visible layers, the .ora keeps
+    # them apart (plus hidden template guides) for hand editing.
+    g = car["guides"]
+    layers = [
+        ora.Layer("base", Image.new("RGBA", (SIZE, SIZE), BASE)),
+        ora.Layer("stripe", ora.paint_layer(STRIPE, shape)),
+        ora.Layer("trim (template)", trim),              # carbon/black trim over the paint
+        ora.Layer("decals (template)", top),             # template decals that must stay on top
+        ora.Layer("GUIDE number blocks", layer(psd, g["numbers"]), visible=False),
+        ora.Layer("GUIDE sponsor blocks", layer(psd, g["sponsors"]), visible=False),
+        ora.Layer("GUIDE wireframe", layer(psd, g["wire"]), visible=False),
+        ora.Layer("GUIDE mask (not paintable)", mask, visible=False),
+    ]
+    layers = [l for l in layers if l.image.getbbox()]  # skip empty ones (McLaren has no decal layer)
     os.makedirs(OUT, exist_ok=True)
+    img = ora.write(os.path.join(OUT, f"example_{key}.ora"), layers)
     img.convert("RGB").save(os.path.join(OUT, f"example_{key}.tga"))   # 24-bit, no alpha
 
     # Spec: R = metallic, G = roughness, B = clearcoat (0 = full clearcoat, like the templates).
     # Trim keeps the template's own roughness.
+    # Trim keeps the template's own roughness. One layer per finish, like the paint.
     rough = np.array(spec_group(psd, *car["rough"]))[..., 1].astype(np.uint8)
-    metal = np.zeros_like(rough)
     body = np.array(trim)[..., 3] < 128
     on_stripe = np.array(shape) > 127
-    for m, (mv, rv) in ((body & ~on_stripe, SPEC["base"]), (body & on_stripe, SPEC["stripe"])):
-        metal[m], rough[m] = mv, rv
-    Image.fromarray(np.stack([metal, rough, np.zeros_like(metal)], -1)).save(
-        os.path.join(OUT, f"example_{key}_spec.tga"))
+
+    def finish(where, mv, rv):
+        rgba = np.zeros((SIZE, SIZE, 4), np.uint8)
+        rgba[..., 0], rgba[..., 1], rgba[..., 3] = mv, rv, where * 255
+        return Image.fromarray(rgba)
+
+    spec_layers = [
+        ora.Layer("trim roughness (template)", Image.fromarray(
+            np.stack([np.zeros_like(rough), rough, np.zeros_like(rough), np.full_like(rough, 255)], -1))),
+        ora.Layer("base finish", finish(body & ~on_stripe, *SPEC["base"])),
+        ora.Layer("stripe finish", finish(body & on_stripe, *SPEC["stripe"])),
+        ora.Layer("GUIDE paint (for reference)", img, visible=False, opacity=0.5),
+    ]
+    spec = ora.write(os.path.join(OUT, f"example_{key}_spec.ora"), spec_layers)
+    spec.convert("RGB").save(os.path.join(OUT, f"example_{key}_spec.tga"))
 
     prev = img.copy()
     prev.alpha_composite(mask)                         # mask alpha = NOT paintable

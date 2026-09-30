@@ -59,12 +59,41 @@ gearbox/rear crash structure/suspension covers), front wing underside, floor.
 
 ## Proven placements
 
-None yet.
+From `neonhornet` v1 (checked in-sim):
+- Nose: GFR badge rot -90 at (640, 1128) reads right from the front; chevrons x 480-850 fine.
+- Sidepod side: wordmark (430x86) at (520, 1905) left upright / (520, 350) right rot 180.
+- Sidepod top: hornet rot 90 at (440, 1706), right side = vertically flipped copy: head forward.
+- Rear wing main plane: lettering rot 180 at (1215, 1681) reads right from behind; lower element
+  (1215, 1905) likewise. Front wing tops: upright at (1530, 591) and (1887, 591).
+- Number cards drawn around the number blocks (+22 px) show iRacing's number cleanly.
 
 ## Gotchas
 
+- **Sidepod shoulder seam:** the sidepod top and side strips are separate on the sheet: a
+  wedge-shaped gap between them (true edges 4-36 px apart at x 200-430, ~200 px at x 900, same
+  on both sides). The mask bleeds ~10 px past each true edge and even joins the strips at
+  x ~220-400, so measure the seam from the **Wire outlines** (the consecutive outline pair
+  nearest the boundary), not the mask. In 3D the top strip's outer edge meets the side strip's
+  inner edge, so any field drawn in plain sheet coords jumps at the shoulder. Fix: per column,
+  shift the side strip by the gap (sigma ~4 px smoothing). `neonhornet/livery.py`
+  `shoulder_fix()` (v1 jumped, v2 with mask edges "very close", v3 with outlines: confirmed in-sim).
+- **Engine cover side crease:** same kind of seam as the sidepod. The engine side is two strips
+  with a wedge gap from x ~1440 (outline gap 11 px at x 1480 → ~110 px at x 1800), centred on
+  y ≈ 927 → 913 (right; left = mirror). A small separate black part (Car_decal) sits inside
+  the wedge at x ~1730-2000: skip its outlines when measuring. `neonhornet` `engine_fix()`
+  (confirmed in-sim, v4).
+- The engine cover top is split down the centre line on the sheet (unpaintable wedge
+  x ~1330-1900, up to ~40 px wide): a logo across it gets sliced. Put centred logos elsewhere.
+- `Car_decal` paints the halo (strip x 1430-1515, y 1460-2048) and the left-edge cluster incl.
+  the left mirror (x 0-260, y 780-1000) black. They ARE paintable: lift `Car_decal` there
+  to colour them (neonhornet v1: orange/black halo bands and pink mirrors worked in-sim).
 - 3D parts over paint: front and rear suspension arms cross the nose side (cols 7-10) and the
   engine cover side; the halo and mirrors sit over the cockpit rim; exposed engine/gearbox and
   the rain light under the rear wing.
 - iRacing draws the number on the nose (cols 5-6) and on the outer face of both rear-wing
   endplates: leave those clear.
+
+## Seams (tools/seams.py, LIVERY_GUIDE 4b)
+
+Seam ruler built: `seams.tga` (64 panels, codes in `seams_sheet.png`).
+Readings in `seams.json`: none yet. Add each seam read in-sim below (which seam, screenshot, checked?).

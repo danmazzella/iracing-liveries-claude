@@ -113,8 +113,10 @@ So map every new car first:
    sit over paint.
 4. Keep a "Proven placements" and a "Gotchas" section in that README and add to it after
    every in-sim round.
+5. **Map the seams** (section 4b) for any panels a design will cross (hood/bumper,
+   fender/door, roof/pillars...).
 
-Already mapped here: **BMW M4 GT3** (`cars/bmw/`), **McLaren 720S GT3 EVO** (`cars/mclaren/`), **Lotus 79** (`cars/lotus79/`), **Formula IR04 / F4** (`cars/ir04/`).
+Already mapped here: **BMW M4 GT3** (`cars/bmw/`), **McLaren 720S GT3 EVO** (`cars/mclaren/`), **Lotus 79** (`cars/lotus79/`), **Formula IR04 / F4** (`cars/ir04/`), **Ferrari 296 GT3** (`cars/ferrari/`).
 
 Some templates' `Mask` covers almost nothing. The panel (UV island) outlines are then drawn in the
 wireframe layer (Lotus 79: pure green lines in `Wire`): label the regions enclosed by them to get
@@ -124,6 +126,89 @@ background (it silently grabs the whole sheet).
 Failed alternative: a colour-coded paint where each pixel's colour encodes its own sheet
 position (`tools/uvcode.py`). Garage lighting shifts colours enough to throw the decode off
 by 200-400 px. Use the labelled grid.
+
+### 4b. Seam map (lines that cross panels line up the first time)
+
+The grid says where a cell lands. It doesn't say **which panel edges touch in 3D**, and that's
+where stripes broke and needed 3-8 rounds of nudging (section 7, "Seams between panels").
+`tools/seams.py` maps the seams once per car:
+
+1. `tools/seams.py ruler <car>` finds every panel from the template's Wire layer (the mesh
+   lines enclose small cells inside a panel; holes are cells ringed only by the green outline;
+   touching panels split along the green outline), gives it a code letter (biggest = A) and
+   paints a numbered ruler along all its edges: 64 px segments `C0 C1 C2 ...`, a red tick at
+   each segment start, codes underlined so a rotated 6/9 reads right. Writes
+   `cars/<car>/seams.tga`, `seams_sheet.png` (flat, with the mask) and `islands.npz` (panels +
+   edges; regenerate only together with the ruler, readings refer to it).
+2. Install it (`install_paint.ps1 -Car <car> -Seams`), zoom on each seam and screenshot it
+   (`cars/<car>/seam_<where>.webp`). Read where the two rulers meet and write the pairs to
+   `cars/<car>/seams.json`: `["C12", "F48.5"]` = C12's start tick is opposite the middle of
+   F48. Two readings per seam at least (its ends), one every ~150 px on long or curved seams.
+   `mirror_y` in that file copies each reading to the mirrored panels, but only where the
+   reflected points really fall on panel edges.
+3. `tools/seams.py check <car>` unfolds the seamed panels and paints straight stripes across
+   them (`seamcheck.tga`, install with `-SeamCheck`). Stripes running on across a seam
+   without a step or kink = that seam's readings are right.
+4. In a livery, draw on the **unfolded canvas**: `u = seams.Car("<car>").unfold("C")` roots
+   it at panel C (its own sheet coords stay as they are) and warps every panel seamed to it
+   so it sits against C. `X, Y, on = u.field()` gives design coords for every sheet pixel (for
+   field designs: flow, noise, stripes as functions of X, Y); `u.pull(img)` samples a drawn
+   design image onto the sheet. The warp is a thin-plate spline pinned to the seam
+   readings, similarity transform away from the seam, so it matches position **and** angle,
+   including shifts that vary along the seam (the BMW hood/bumper 1.04 → 1.186).
+   Only seams on the unfold's tree are continuous (a panel follows the first one it was
+   reached by); `u.skipped` lists the others.
+- `tools/seams.py codes <car> x,y` (or `F@x,y` for panel F only) gives the ruler code at a
+  sheet point: handy for turning a known in-sim match into a reading.
+- Test run (BMW hood/bumper from the in-sim facts in section 7): seam points land within
+  ~1 px on average (5 px worst) after unfolding.
+- First in-sim round (BMW): whole-car shots at normal zoom were enough to read seams whose
+  labels face the camera (hood/bumper centre, roof/windshield banner): zoom into the
+  screenshot, find the tick pairs, estimate the offset as a fraction of a segment. Seams seen
+  at a grazing angle need close-ups.
+- **Don't let a reading pair span a spot where the edges don't touch** (the BMW bumper edge
+  detours round the roundel on the centre line; the pair across it bent the stripes). Read up
+  to it on one side and let `mirror_y` add the other half.
+- Thin strips (roof rails, pillars): the rulers of both edges meet in the middle. The ruler
+  clips each label to its own edge's band and shrinks it to fit.
+- Stripe test v1 (BMW): stripes joined at every seam but **kinked**, and bent into arcs on
+  the bumper. Two causes, both fixed in the tool:
+  - Only positions were pinned at the seam, so the spline sheared the child panel there
+    (4:1 stretch). Now the direction straight into the child is pinned to continue the
+    direction straight out of the parent, at the seam's scale (UV unwraps are close to
+    angle-preserving). Stretch at the seam went from 4.2 to 1.1.
+  - A small notch in one edge (bumper next to the roundel) made that stretch of edge twice as
+    long as the matching hood edge, and matching by arc length squeezed it. Readings are now
+    matched by progress along the straight line between them, so notches collapse.
+- Some kink is real: where a seam is a body crease (hood edge → bumper face, roof → windshield
+  banner), a straight line on the surface looks bent in a screenshot. Judge steps, and whether
+  the stripe width and spacing carry on, not the angle in the picture.
+- Root the unfold at the best-connected panel (the roof), not the biggest: a big side panel
+  hanging off one thin seam made a poor root, and everything chained through it came out garbled.
+- **Read ticks where they touch the seam**, not along their length: ticks lean in perspective.
+- A step in the stripe test isn't always a misread. The BMW roof/banner step came from a tool
+  bug: those readings already crossed the centre line, and the mirror copy added a second,
+  slightly different match a pixel away, which made the spline zig-zag (v3 tore the stripes
+  once I "fixed" the readings the wrong way). Now mirror copies only fill what wasn't read.
+  Before changing a reading, look at the flat `seamcheck.tga`: tears or wobbles there are
+  tool problems, not readings.
+- **Check the sheet for touching edges first**: some UV islands are laid out edge to edge
+  (BMW roof ↔ rails, hood ↔ fender tops, 1-2 px apart). `codes <car> F@x,y` near one panel's
+  edge then gives the other panel's matching code directly, which helps when the in-sim labels
+  are too small. Still confirm with the stripe test.
+- Stop a seam where an edge turns a corner (a reading past it made a 13:1 warp spike); the
+  stretch/gap numbers from the Jacobian check find these before the sim does.
+- Not every panel edge is a seam: the BMW door front edge and the front fender are separated
+  by a 3D vent/gill, so graphics break there whatever you do.
+- Seams can be read in pieces (left half, right corner): readings of the same two panels are
+  merged into one seam.
+- Stripe test v2 (BMW): hood → bumper and roof → rails → sides carried the stripes through
+  cleanly, so designs crossing those seams line up with no tweaking.
+- Reading precision: the same seam read on the other side of the car (BMW left roof rail)
+  landed 5-9 px (~0.1 segment) from the mirrored prediction. Well under the ~60 px that shows
+  in the sim, so one side + `mirror_y` is enough.
+- Mirrored panels are paired by overlapping their reflected shapes, not by the panel under the
+  mirrored seam points: the BMW roof edge and the rail edge sit 1-10 px apart on the sheet.
 
 ---
 
@@ -155,6 +240,9 @@ Rules of thumb:
   `_spec_chrome.tga`) and let the user swap them in-sim without touching the paint.
 - Give each area its finish from what's under it: body colour, graphic, sticker, and the
   template's own roughness for trim.
+- Shimmering pattern (untested in-sim yet): vary metallic/roughness **per pattern cell** (each hex
+  tile its own random value) instead of one value per colour, so neighbouring cells catch the light
+  differently as the camera moves (white-gofast `_spec_shimmer`).
 
 ---
 
@@ -167,6 +255,9 @@ Rules of thumb:
   adjacent shapes met at opposite ends of their gradients). Use flat colour for graphics that
   cross panel seams.
 - Single-colour line art disappears on the same colour (an orange mascot on an orange stripe).
+- Every stripe/shard should visibly start from something (another graphic, a panel edge, a
+  number board). A blunt base floating in plain white reads as "coming out of nowhere": tuck the
+  base under the graphic it springs from (draw it first, then the block over it).
 - The flat preview lies about colour: garage lighting and the spec change it a lot. Only
   in-sim screenshots count.
 
@@ -190,10 +281,22 @@ Rules of thumb:
 - The same sheet y does **not** line up across the hood/bumper seam. On the BMW, an edge at
   bumper (x 255, y 1490) continues on the hood at y ≈ 1462 near the headlight. Match the edge's
   **angle** across the seam too, not just its position.
+- **Seam ruler** for the last few px: when nudging an edge back and forth doesn't converge, paint 8 px
+  bands of distinct colours (constant y) across both panels at the seam (`white-gofast/ruler.py`),
+  take one in-sim close-up and read which band meets which. The 64 px grid is too coarse for this.
 - The shift varies across the seam: near the centre line it's small (scale 1.04 about the
   mirror line), by the headlight it's larger (1.186). A single scale for the whole seam put
   stripes 20-35 px off. Continuous stripes across a seam: copy the hood's seam column onto the
-  bumper with a measured scale and verify in-sim.
+  bumper with a measured scale and verify in-sim. **Now: map the seam (section 4b) and draw on
+  the unfolded canvas instead.**
+
+- **UV cuts inside one body surface** (F4 sidepod: top and side strips touch only at the front,
+  a wedge gap opens behind). Anything computed from sheet coords (noise, flow fields, stripes)
+  jumps there in 3D. Fix it in coordinates: per sheet column, measure the gap and shift one
+  strip against the other before evaluating the field (smooth the gap lightly, or you get
+  ragged edges). **Measure the true edges from the Wire outlines, not the Mask**: the mask
+  bleeds ~10 px past each panel edge and can even join strips that are still cut in 3D (the
+  mask-based fix left a visible step; the outline-based one closed it to 1-2 px).
 
 **Shapes**
 - Reference designs are usually **curved** (they follow body lines). Use Bezier edges, not
@@ -281,3 +384,29 @@ Ideas that worked, to reuse or remix:
 
 Feedback that helped: say what's wrong **and where** ("orange too high above the headlight on
 the front", "the hood edge bows the wrong way"), and whether something is good and must be kept.
+
+---
+
+## 11. Finishing a livery by hand (GIMP / Krita)
+
+The scripts can also save **layered OpenRaster files** (`.ora`, via `tools/ora.py`) next to the
+TGAs. GIMP and Krita open them with every layer kept apart; in GIMP, Save As `.xcf` to keep a
+GIMP file. `example/livery.py` shows the pattern: draw each part on its own transparent layer
+(`ora.paint_layer(colour, shape)`), list them bottom → top, and flatten the same list for the
+TGA, so the `.ora` and the TGA always match:
+
+- `<name>.ora`: base, graphics, template trim and decals, plus hidden `GUIDE` layers (number
+  blocks, sponsor blocks, wireframe, not-paintable mask) to turn on while editing.
+- `<name>_spec.ora`: one layer per finish, R = metallic, G = roughness (section 5), plus the
+  paint as a hidden guide. Paint a finish with the exact colour `(metallic, roughness, 0)`.
+
+Things to know:
+- **Hand edits don't go back into the script.** Rebuilding overwrites the `.ora`, so do the
+  code work first and the hand touches last (and save the `.xcf` under another name).
+- **Mirroring isn't automatic by hand.** The right side is upside down on the sheet (section 3):
+  copy an edit to the other side with a vertical flip about the mirror line; text and logos
+  need a 180° rotation instead.
+- Export: Image > Flatten Image, Export As `.tga` with RLE unticked, then undo the flatten.
+  Flattening drops the hidden guides and the alpha (24-bit). Then install it like any build.
+- GIMP 3.2 exports the same pixels as the script's TGA except on anti-aliased edges (it blends
+  soft edges slightly differently). Nothing visible on the car.
