@@ -75,7 +75,7 @@ From `neonhornet` v1 (checked in-sim):
   x ~220-400, so measure the seam from the **Wire outlines** (the consecutive outline pair
   nearest the boundary), not the mask. In 3D the top strip's outer edge meets the side strip's
   inner edge, so any field drawn in plain sheet coords jumps at the shoulder. Fix: per column,
-  shift the side strip by the gap (sigma ~4 px smoothing). `neonhornet/livery.py`
+  shift the side strip by the gap (sigma ~4 px smoothing). `liveries/neonhornet/livery.py`
   `shoulder_fix()` (v1 jumped, v2 with mask edges "very close", v3 with outlines: confirmed in-sim).
 - **Engine cover side crease:** same kind of seam as the sidepod. The engine side is two strips
   with a wedge gap from x ~1440 (outline gap 11 px at x 1480 → ~110 px at x 1800), centred on

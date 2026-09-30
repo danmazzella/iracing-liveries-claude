@@ -3,7 +3,7 @@
   Install a livery (paint + spec) or a car's mapping grid into iRacing. Run with no options for help.
 #>
 param(
-    [string]$Project = "",     # livery folder in the repo, e.g. example, mylivery
+    [string]$Project = "",     # livery folder in liveries\, e.g. example, mylivery
     [string]$Car = "",         # car key from cars\ (bmw, mclaren) or an iRacing paint folder name
     [string]$Build = "",       # build tag, e.g. 1 or v3; default = newest build in <project>\out
     [string]$Finish = "gloss",   # any _spec_<name>.tga the build has
@@ -20,6 +20,7 @@ param(
 $ErrorActionPreference = "Stop"
 $Repo = Split-Path $PSScriptRoot -Parent
 $IdFile = Join-Path $PSScriptRoot ".customer_id"      # gitignored
+$Liveries = Join-Path $Repo "liveries"                # one folder per livery
 
 function Get-Cars {
     # car key -> iRacing folder, read from the "iRacing paint folder: `...`" line in cars\<car>\README.md
@@ -34,7 +35,7 @@ function Get-Cars {
 }
 
 function Get-Builds([string]$proj, [string]$car) {
-    $out = Join-Path (Join-Path $Repo $proj) "out"
+    $out = Join-Path (Join-Path $Liveries $proj) "out"
     if (-not (Test-Path $out)) { return @() }
     $pattern = if ($car) { "${proj}_${car}*.tga" } else { "${proj}_*.tga" }
     Get-ChildItem $out -Filter $pattern | Where-Object { $_.BaseName -notmatch '_spec(_|$)' -and $_.BaseName -notmatch 'grid' } |
@@ -43,7 +44,7 @@ function Get-Builds([string]$proj, [string]$car) {
 
 function Show-Help {
     $cars = Get-Cars
-    $projects = Get-ChildItem $Repo -Directory | Where-Object { Test-Path (Join-Path $_.FullName "out") } |
+    $projects = Get-ChildItem $Liveries -Directory -ErrorAction SilentlyContinue | Where-Object { Test-Path (Join-Path $_.FullName "out") } |
         ForEach-Object { $_.Name }
     $saved = if (Test-Path $IdFile) { (Get-Content $IdFile -Raw).Trim() } else { "none yet" }
     Write-Host @"
@@ -58,7 +59,7 @@ USAGE (run from anywhere)
   .\install_paint.ps1 -Project <folder> [-Car <car>] -List    show available builds
 
 OPTIONS
-  -Project     livery folder in this repo. Files come from <folder>\out\<folder>_<car>_<build>.tga
+  -Project     livery folder in liveries\. Files come from liveries\<folder>\out\<folder>_<car>_<build>.tga
   -Car         car key (below) or an iRacing paint folder name (Documents\iRacing\paint\...)
   -Build       build tag (e.g. 1, v3). Leave out to install the newest build.
   -Finish      which spec file: gloss = _spec.tga, anything else = _spec_<name>.tga (e.g. metal,
@@ -92,7 +93,7 @@ if ($Project) { $Project = Split-Path $Project.TrimEnd('\', '/') -Leaf }   # acc
 if ($List) {
     if (-not $Project) { throw "-List needs -Project. Run with no options for help." }
     $builds = Get-Builds $Project $Car
-    if (-not $builds) { Write-Host "No builds in $Project\out$(if ($Car) { " for $Car" })."; exit 0 }
+    if (-not $builds) { Write-Host "No builds in liveries\$Project\out$(if ($Car) { " for $Car" })."; exit 0 }
     $builds | ForEach-Object {
         $specs = Get-ChildItem $_.DirectoryName -Filter "$($_.BaseName)_spec*.tga" |
             ForEach-Object { ($_.BaseName -replace '^.*_spec_?', '') } | ForEach-Object { if ($_) { $_ } else { "gloss" } }
@@ -141,7 +142,7 @@ if ($Grid -or $Seams -or $SeamCheck) {
     if ($SpecFile) { $spec = $SpecFile }
 } else {
     if (-not $Project) { throw "Give a livery folder with -Project (or use -Grid / -Seams / -File). Run with no options for help." }
-    $out = Join-Path (Join-Path $Repo $Project) "out"
+    $out = Join-Path (Join-Path $Liveries $Project) "out"
     if (-not (Test-Path $out)) { throw "No output folder: $out. Build the livery first." }
     if ($Build) {
         $base = "${Project}_${Car}_$Build"

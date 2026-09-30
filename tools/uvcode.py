@@ -9,7 +9,7 @@ three channels together, so the ratios R/B and G/B survive shading. Neutral pixe
 (background, tyres, glass, iRacing's number) have ratios near 1, above HI/255, so decode()
 rejects them.
 
-    ../.venv/bin/python ../tools/uvcode.py              writes uvcode.tga + uvcode_spec.tga into ./out
+    ../../.venv/bin/python ../../tools/uvcode.py              writes uvcode.tga + uvcode_spec.tga into ./out
 """
 import os
 import sys

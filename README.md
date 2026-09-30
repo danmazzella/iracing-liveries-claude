@@ -31,7 +31,9 @@ That's it. Everything below is detail, for when you're curious or something goes
 - `cars/`: maps of the **BMW M4 GT3** and the **McLaren 720S GT3 EVO** (which part of the paint
   file lands on which part of the car), with screenshots. Other cars work too: Claude maps them first.
 - `tools/`: a mapping-grid maker for any car, and an installer that copies a paint into iRacing.
-- `example/`: a small working livery to start from.
+- `liveries/`: one folder per livery. `liveries/example/` is a small working livery to start from;
+  your own liveries go next to it.
+- `psd/`: put iRacing's car templates here (not included, see Step 4).
 
 **What's not in here:** our own liveries, team logos, or iRacing's template files. You make your own.
 
@@ -122,8 +124,7 @@ the ones you need:
 
 1. Get the template for your car from iRacing (each car has a paint template download; search
    "iRacing paint template <car name>" if you can't find it).
-2. Unzip it if needed, and put the `.psd` file in the **top level** of this folder, next to
-   `README.md`. Keep the original file name, e.g. `BMW M4 GT3.psd` or `McLaren 720s EVO GT3.psd`.
+2. Unzip it if needed, and put the `.psd` file in the **`psd` folder**. Keep the original file name, e.g. `BMW M4 GT3.psd` or `McLaren 720s EVO GT3.psd`.
 
 You don't need Photoshop.
 
@@ -158,7 +159,7 @@ read what it wants to do and press Enter to allow it.
 
 Good first messages:
 
-> I'm new to this. I'm on Windows and I've put `BMW M4 GT3.psd` in the folder. Check my setup
+> I'm new to this. I'm on Windows and I've put `BMW M4 GT3.psd` in the psd folder. Check my setup
 > works by building the example livery.
 
 > I want a livery for the BMW M4 GT3: dark green with a gold stripe from the nose over the roof,
@@ -173,7 +174,7 @@ Good first messages:
 This is how every livery gets made. Expect several rounds. That's normal.
 
 1. **Claude builds** your livery and tells you where the files are, e.g.
-   `mylivery\out\mylivery_bmw_1.tga` (the paint) and `..._spec.tga` (the finish: gloss, metallic...).
+   `liveries\mylivery\out\mylivery_bmw_1.tga` (the paint) and `..._spec.tga` (the finish: gloss, metallic...).
 2. **Install it** with the installer in the `tools` folder (PowerShell). Tell it which livery
    folder and which car; it picks the newest build:
    ```
@@ -232,8 +233,8 @@ the first time.
 
 ## Getting updates
 
-- Downloaded the ZIP: download it again and copy your own folders (your liveries, `logos/`,
-  the `.psd` files) across.
+- Downloaded the ZIP: download it again and copy your own folders (`liveries/`, `logos/`,
+  `psd/`) across.
 - Used `git clone`: in the folder, run `git pull`.
 
 Your own livery folders, logos and templates are never uploaded or overwritten by updates: the
@@ -255,7 +256,7 @@ through making a "pull request".
 | "running scripts is disabled on this system" | Run `Set-ExecutionPolicy -Scope Process Bypass` in that PowerShell window first. |
 | "Paint folder not found" | Drive the car once in iRacing, then use one of the folder names the script lists. |
 | The car still shows the old paint | Press **Ctrl+R** in the sim. Check the customer ID is yours. |
-| Claude can't find the template | The `.psd` must be in the top folder, next to `README.md`, with its original name. |
+| Claude can't find the template | The `.psd` must be in the `psd` folder, with its original name. |
 | Anything else | Paste the exact error message to Claude and ask what it means. |
 
 ---
@@ -272,6 +273,8 @@ tools/grid.py         makes the mapping grid for a new car / lists template laye
 tools/seams.py        maps where panels meet, so graphics line up across them
 tools/install_paint.ps1   copies a paint into iRacing (Windows)
 tools/labelproj.py    advanced: projects a reference image onto the paint file
-example/livery.py     a minimal livery to start from
+liveries/<livery>/    one folder per livery (only liveries/example/ is shared)
+liveries/example/     a minimal livery to start from
+psd/                  iRacing's car templates go here (only its README is shared)
 logos/                put your logos here (only its README is shared)
 ```

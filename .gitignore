@@ -1,5 +1,6 @@
 # Allowlist: ignore everything at the top level, then share only what's listed below.
-# Any new livery folder you create stays private unless you add it here.
+# Liveries live in liveries/: only the example is shared, any new livery stays private
+# unless you add it here.
 /*
 !/.gitignore
 !/README.md
@@ -8,15 +9,24 @@
 !/requirements.txt
 !/cars/
 !/tools/
-!/example/
+!/liveries/
 !/logos/
+!/psd/
+
+# Liveries: only the example is shared
+/liveries/*
+!/liveries/example/
+
+# Templates: only the README is shared (download the PSDs from iRacing)
+/psd/*
+!/psd/README.md
 
 # Logos: only the README is shared, logo files stay private
 /logos/*
 !/logos/README.md
 
 # Never shared, wherever they are:
-# iRacing templates (download your own), build output, python/OS clutter
+# iRacing templates (download your own, into psd/), build output, python/OS clutter
 *.psd
 out/
 __pycache__/

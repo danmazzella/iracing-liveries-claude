@@ -10,10 +10,10 @@ and Krita open: out/example_<car>.ora (paint) and _spec.ora (finish). Use them t
 by hand (LIVERY_GUIDE section 11).
 
     cd example
-    ../.venv/bin/python livery.py bmw         -> out/example_bmw.tga, _spec.tga, _preview.png, .ora, _spec.ora
-    ../.venv/bin/python livery.py mclaren
+    ../../.venv/bin/python livery.py bmw         -> out/example_bmw.tga, _spec.tga, _preview.png, .ora, _spec.ora
+    ../../.venv/bin/python livery.py mclaren
 
-Read ../LIVERY_GUIDE.md and ../cars/<car>/README.md before placing anything.
+Read ../../LIVERY_GUIDE.md and ../../cars/<car>/README.md before placing anything.
 """
 import os
 import sys
@@ -22,14 +22,14 @@ import numpy as np
 from PIL import Image, ImageDraw
 from psd_tools import PSDImage
 
-REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+REPO = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.insert(0, os.path.join(REPO, "tools"))
 import ora  # noqa: E402
 
 OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "out")
 SIZE = 2048
 
-# Per-car template facts (see ../cars/<car>/README.md). Put your PSDs in the repo root.
+# Per-car template facts (see ../../cars/<car>/README.md). Put your PSDs in psd/.
 CARS = {
     "bmw": dict(psd="BMW M4 GT3.psd", mask="Mask", trim="Carbon Fiber", top="Car_decal",
                 rough=("Custom Spec", "rough"), mirror_y=1311.5,
@@ -77,7 +77,7 @@ def mirrored(poly, mid):
 
 def build(key):
     car = CARS[key]
-    psd = PSDImage.open(os.path.join(REPO, car["psd"]))
+    psd = PSDImage.open(os.path.join(REPO, "psd", car["psd"]))
     mask, trim, top = layer(psd, car["mask"]), layer(psd, car["trim"]), layer(psd, car["top"])
 
     shape = Image.new("L", (SIZE, SIZE))              # where the stripe is, for the spec map

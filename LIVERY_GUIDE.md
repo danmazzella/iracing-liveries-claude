@@ -12,7 +12,7 @@ Read this first, then `cars/<car>/README.md` for the car you're painting.
 ## 1. How it works
 
 Liveries are **Python scripts** that draw straight onto iRacing's 2048x2048 paint sheet
-(Pillow + numpy). Each livery lives in its own folder and writes into `<livery>/out/`, named
+(Pillow + numpy). Each livery lives in its own folder under `liveries/` and writes into `liveries/<livery>/out/`, named
 `<livery>_<car>_<build>` so the installer can find it (`<car>` = the folder name in `cars/`):
 
 | File | What it is |
@@ -25,7 +25,7 @@ You copy the TGAs into iRacing's paint folder, press **Ctrl+R** in the sim, look
 and repeat. Code (not Photoshop) makes it cheap to change one number and rebuild, to mirror
 the design onto both sides automatically, and to write several finishes at once.
 
-Minimal working example: `example/livery.py`. Grid/mapping tool: `tools/grid.py`.
+Minimal working example: `liveries/example/livery.py`. Grid/mapping tool: `tools/grid.py`.
 Installer: `tools/install_paint.ps1 -Project <livery> -Car <car> [-Build N] [-Finish metal]`
 (run it with no options for help). It maps car keys to iRacing folders from the
 `iRacing paint folder: \`...\`` line in `cars/<car>/README.md`, so keep that line in every car README.
@@ -54,7 +54,7 @@ Installer: `tools/install_paint.ps1 -Project <livery> -Car <car> [-Build N] [-Fi
 ## 3. Templates (the PSD)
 
 iRacing publishes a paint template (`.psd`) for every car. It's not included in this repo:
-download it and put it in the repo root (e.g. `BMW M4 GT3.psd`). Scripts read the layers
+download it and put it in `psd/` (e.g. `psd/BMW M4 GT3.psd`). Scripts read the layers
 directly with `psd-tools`. List a template's layers with `tools/grid.py "<file>.psd"`.
 
 Conventions that held on both templates:
@@ -96,9 +96,9 @@ Conventions that held on both templates:
 
 So map every new car first:
 
-1. `tools/grid.py "<car>.psd" <wire layer> <key>` writes a 32x32 grid of 64px coloured cells
+1. `tools/grid.py "<car>.psd" <wire layer> <key>` (finds the PSD in `psd/`) writes a 32x32 grid of 64px coloured cells
    labelled `col,row` (cell c,r covers sheet x `c*64..c*64+63`, y `r*64..r*64+63`) with the
-   wireframe on top. Copy `out/<key>_grid.tga` to `cars/<key>/grid.tga` and start
+   wireframe on top. Copy `out/<key>_grid.tga` (in the folder you ran it from) to `cars/<key>/grid.tga` and start
    `cars/<key>/README.md` with the line ``iRacing paint folder: `<folder>` `` (the installer reads it).
 2. Install it: `tools/install_paint.ps1 -Car <key> -Grid`. In the sim take screenshots: front, front 3/4, both
    sides, rear, rear 3/4, top. Save them in `cars/<car>/` as `grid_<view>.webp`.
@@ -282,7 +282,7 @@ Rules of thumb:
   bumper (x 255, y 1490) continues on the hood at y ≈ 1462 near the headlight. Match the edge's
   **angle** across the seam too, not just its position.
 - **Seam ruler** for the last few px: when nudging an edge back and forth doesn't converge, paint 8 px
-  bands of distinct colours (constant y) across both panels at the seam (`white-gofast/ruler.py`),
+  bands of distinct colours (constant y) across both panels at the seam (`liveries/white-gofast/ruler.py`),
   take one in-sim close-up and read which band meets which. The 64 px grid is too coarse for this.
 - The shift varies across the seam: near the centre line it's small (scale 1.04 about the
   mirror line), by the headlight it's larger (1.186). A single scale for the whole seam put
@@ -322,6 +322,14 @@ Rules of thumb:
       k = min(box[0] / im.width, box[1] / im.height)
       return im.resize((max(1, round(im.width * k)), max(1, round(im.height * k))), Image.LANCZOS)
   ```
+- **Rear wing and roof decals read from the FRONT of the car.** The user wants
+  wing text upright when viewed **from the front of the car** (looking back over the car at the wing),
+  not from a chase camera behind it. On the Ferrari 296 that's rot 0 (rot 180 read from behind and was
+  rejected). Applies to **every car and livery**; set it this way from the first build. Values in use:
+  BMW rot 0 (box 1385-2040 x 312-598), McLaren rot 0 (0-640 x 170-290), Ferrari rot 0, Lotus 79 rot -90,
+  IR04 rot 0. **Roof logos too**: letter tops toward the rear (sheet +x when the front is on the left),
+  e.g. rot -90 for text across the BMW/McLaren roof (rot 90 = top toward the nose, rejected). Mascots
+  (the polkadot roof hornet) aren't covered by the rule unless the user says so.
 - Logo orientation: work out the rotation per spot (a hood mascot at rot 90 looked upside
   down; rot −90 was right). Put rotation in the per-car config and confirm in-sim.
 
@@ -371,15 +379,15 @@ Ideas that worked, to reuse or remix:
 
 1. New car? Map it (section 4). Existing car? Read `cars/<car>/README.md`.
 2. Describe the design (or give a reference image). Claude writes the livery script in its own
-   folder (`<livery>/livery.py`, `<livery>/out/`), builds, and checks the preview (crop and zoom
+   folder (`liveries/<livery>/livery.py`, `.../out/`), builds, and checks the preview (crop and zoom
    on problem areas; draw the mask over it).
 3. Install (`tools/install_paint.ps1 -Project <livery> -Car <car>`), Ctrl+R, take screenshots from the same angles each time.
-4. **Save screenshots as files in the repo** (`<livery>/reference/`) and give Claude the path.
+4. **Save screenshots as files in the repo** (`liveries/<livery>/reference/`) and give Claude the path.
    Screenshots pasted into chat aren't always saved as files, and `/tmp` gets wiped.
-5. Claude fixes and **writes down what it learned**: version notes in `<livery>/CLAUDE.md`
+5. Claude fixes and **writes down what it learned**: version notes in `liveries/<livery>/CLAUDE.md`
    (what changed, what the in-sim result was), placement facts in `cars/<car>/README.md`,
    general lessons here.
-6. Number every build (v1, v2, ...). Copy approved builds to `<livery>/final/` together with a
+6. Number every build (v1, v2, ...). Copy approved builds to `liveries/<livery>/final/` together with a
    copy of the script that made them.
 
 Feedback that helped: say what's wrong **and where** ("orange too high above the headlight on
@@ -391,7 +399,7 @@ the front", "the hood edge bows the wrong way"), and whether something is good a
 
 The scripts can also save **layered OpenRaster files** (`.ora`, via `tools/ora.py`) next to the
 TGAs. GIMP and Krita open them with every layer kept apart; in GIMP, Save As `.xcf` to keep a
-GIMP file. `example/livery.py` shows the pattern: draw each part on its own transparent layer
+GIMP file. `liveries/example/livery.py` shows the pattern: draw each part on its own transparent layer
 (`ora.paint_layer(colour, shape)`), list them bottom → top, and flatten the same list for the
 TGA, so the `.ora` and the TGA always match:
 

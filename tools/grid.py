@@ -4,11 +4,11 @@ The grid is a 32x32 board of 64px coloured cells labelled 'column,row' (cell c,r
 x c*64..c*64+63, y r*64..r*64+63), with the template's wireframe on top. Install it as the
 car's paint, screenshot the car in-sim, and you can read which sheet area paints which part.
 
-    ../.venv/bin/python ../tools/grid.py "My Car.psd"                 list the PSD's layers
-    ../.venv/bin/python ../tools/grid.py "My Car.psd" wire mycar     write out/mycar_grid.tga
-                                                                      (+ _grid_preview.png)
-Run from inside a livery folder (output goes to ./out). The PSD path is relative to the repo
-root if it isn't found as given. Layer names differ per template ('wire', 'Wire', ...):
+    ../../.venv/bin/python ../../tools/grid.py "My Car.psd"              list the PSD's layers
+    ../../.venv/bin/python ../../tools/grid.py "My Car.psd" wire mycar   write out/mycar_grid.tga
+                                                                         (+ _grid_preview.png)
+Run from inside a livery folder (output goes to ./out). The PSD path is looked up in psd/ if it
+isn't found as given. Layer names differ per template ('wire', 'Wire', ...):
 list them first.
 """
 import colorsys
@@ -29,9 +29,11 @@ FONTS = [   # first one that exists wins
 
 
 def open_psd(path):
-    if not os.path.exists(path):
-        path = os.path.join(REPO, path)
-    return PSDImage.open(path)
+    """Open a template: the path as given, else from psd/ (where templates live), else the repo root."""
+    for p in (path, os.path.join(REPO, "psd", path), os.path.join(REPO, path)):
+        if os.path.exists(p):
+            return PSDImage.open(p)
+    sys.exit(f"Template not found: {path}. Download it from iRacing and put it in psd/.")
 
 
 def list_layers(psd):

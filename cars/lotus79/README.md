@@ -49,7 +49,7 @@ Right side listed; left side = mirror (`y' = 2519 - y`).
 
 - The `Mask` layer covers almost nothing; the UV islands are outlined in green (1,255,0) in the
   `Wire` layer. Label the areas enclosed by the green lines to get each panel
-  (`gfr79/livery.py` `islands()`, pick one with a seed point).
+  (`liveries/gfr79/livery.py` `islands()`, pick one with a seed point).
 - Sidepod side (left island x 605-1442, y 1815-1969) is tilted on the sheet (top edge ~2.5-4
   deg: y 1859 at x 700 -> 1820 at x 1260; bottom edge ~1 deg) and only ~110-125 px tall at any
   x: a full inset frame leaves no room for lettering. Text tilted 2 deg sits parallel (left

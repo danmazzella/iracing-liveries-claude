@@ -1,10 +1,10 @@
 # iRacing paints
 
-Python-generated iRacing liveries. Each livery is its own project folder; car templates
-and per-car knowledge are shared at the root.
+Python-generated iRacing liveries. Each livery is its own folder under `liveries/`; car
+templates (`psd/`), per-car knowledge (`cars/`) and tools (`tools/`) are shared.
 
 ```
-<Car name>.psd          iRacing paint templates (2048x2048), downloaded by the user, repo root
+psd/<Car name>.psd      iRacing paint templates (2048x2048), downloaded by the user
 LIVERY_GUIDE.md         everything learned so far: iRacing facts, spec values, placement lessons
 cars/<car>/README.md    per-car sheet map + proven placements + gotchas (READ FIRST)
 cars/<car>/grid_*.webp  in-sim screenshots of the labelled test grid; grid.tga = the grid paint
@@ -15,13 +15,17 @@ tools/install_paint.ps1 install -Project <livery> -Car <car> [-Build N] [-Finish
                         -Car <car> -Grid / -Seams / -SeamCheck installs a car's mapping paints
 tools/labelproj.py      project a reference image onto the sheet from grid labels
 tools/ora.py            write layered .ora files (GIMP/Krita) so a livery can be finished by hand
-example/livery.py       minimal working livery: start new liveries from this
+liveries/<livery>/      one folder per livery (livery.py, out/, reference/, final/, CLAUDE.md)
+liveries/example/       minimal working livery: start new liveries from this (the only shared one)
 logos/                  the user's logos (only logos/README.md is shared)
 .venv/                  python env: pip install -r requirements.txt
 ```
 
 Run scripts with the venv's python from inside the livery folder, e.g.
-`cd example && ../.venv/bin/python livery.py bmw` (Windows: `..\.venv\Scripts\python livery.py bmw`).
+`cd liveries/example && ../../.venv/bin/python livery.py bmw`
+(Windows: `cd liveries\example; ..\..\.venv\Scripts\python livery.py bmw`).
+Livery scripts find the repo root two levels up (`liveries/<name>/` -> root) and open
+templates from `psd/`.
 
 @LIVERY_GUIDE.md
 
@@ -31,10 +35,10 @@ Most users will just say "read the docs and get me set up". Check each item and 
 them through it, one step at a time, in plain language:
 1. Their OS (Windows with iRacing, or a Mac building for a Windows PC).
 2. Python 3 installed; `.venv` exists with `requirements.txt` installed (create it for them).
-3. The car's `.psd` template is in the repo root (they download it from iRacing; list what's
+3. The car's `.psd` template is in `psd/` (they download it from iRacing; list what's
    there). The car is mapped in `cars/<car>/`? If not, mapping comes first.
 4. Their iRacing customer ID (for the installer, which remembers it).
-5. Build `example/` for their car as a smoke test, show them how to install it, then ask what
+5. Build `liveries/example/` for their car as a smoke test, show them how to install it, then ask what
    livery they want.
 
 ## Rules for Claude
@@ -43,10 +47,10 @@ them through it, one step at a time, in plain language:
   start with the grid.
 - **Graphics that cross panel seams**: read those seams off the ruler first (LIVERY_GUIDE 4b),
   then draw them on the unfolded canvas (`tools/seams.py`) instead of nudging by hand.
-- New livery = new folder `<name>/` with `livery.py`, `out/`, `reference/`, `final/` and a
-  `CLAUDE.md` holding the design notes and a numbered version log (what changed, in-sim result).
+- New livery = new folder `liveries/<name>/` (never at the repo root) with `livery.py`, `out/`,
+  `reference/`, `final/` and a `CLAUDE.md` holding the design notes and a numbered version log (what changed, in-sim result).
 - After every in-sim round, write what was learned down: per-car facts in `cars/<car>/README.md`,
-  general lessons in `LIVERY_GUIDE.md`, version status in `<livery>/CLAUDE.md`.
+  general lessons in `LIVERY_GUIDE.md`, version status in `liveries/<livery>/CLAUDE.md`.
 - Ask the user for screenshot **file paths** and save useful screenshots into the repo.
 - Never paint car numbers (iRacing draws them).
 - The user may be new to coding: explain install steps plainly, give exact commands for their OS,

@@ -5,10 +5,10 @@ The grid tells you where each sheet cell lands on the car. It doesn't tell you w
 seams, then lets a livery draw on an "unfolded" canvas where neighbouring panels are already
 joined, so anything drawn across a seam continues on the other panel automatically.
 
-    ../.venv/bin/python ../tools/seams.py ruler <car>      1. write the seam ruler paint
-    ../.venv/bin/python ../tools/seams.py check <car>      3. write a stripe test for the seams read so far
-    ../.venv/bin/python ../tools/seams.py codes <car> x,y  ruler code nearest a sheet point
-                                                           (F@x,y: on panel F's edges only)
+    ../../.venv/bin/python ../../tools/seams.py ruler <car>      1. write the seam ruler paint
+    ../../.venv/bin/python ../../tools/seams.py check <car>      3. write a stripe test for the seams read so far
+    ../../.venv/bin/python ../../tools/seams.py codes <car> x,y  ruler code nearest a sheet point
+                                                                 (F@x,y: on panel F's edges only)
 
 1. `ruler` finds every panel on the template (from the Wire layer), gives it a code letter and
    paints a numbered ruler along all its edges: segments H0, H1, H2, ... every 64 sheet px,
@@ -29,7 +29,7 @@ joined, so anything drawn across a seam continues on the other panel automatical
    or kink = that seam is right.
 
 In a livery:
-    sys.path.insert(0, "../tools"); import seams
+    sys.path.insert(0, "../../tools"); import seams
     car = seams.Car("bmw")
     u = car.unfold("H")                      # root panel; everything seamed to it gets attached
     X, Y, on = u.field()                     # design coords of every sheet pixel on those panels

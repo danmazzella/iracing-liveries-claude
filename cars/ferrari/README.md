@@ -66,7 +66,8 @@ From white-gofast v1 in-sim:
 - Door logo box (875-1285, 1592-1708) fills the door; the Car_decal number board sits behind it on
   the rear quarter (1320-1443, 1555-1661), and there's a hood board (375-477, 763-881, car's right only).
 - GFR badge at (228, 1023.5) size 118 rot -90 sits on the nose, reads from the front.
-- Wing top (1400-2048, 1792-2048) with the logo at rot 180 reads correctly from behind.
+- Wing top (1400-2048, 1792-2048): logo at rot 180 reads from behind the car; **use rot 0** (reads
+  from the front, the user's rule). Keep letters in y ~1826-1910 (lower y = trailing edge, cuts them).
 
 ## Gotchas
 
