@@ -4,9 +4,11 @@
 #>
 param(
     [string]$Project = "",     # livery folder in liveries\, e.g. example, mylivery
-    [string]$Car = "",         # car key from cars\ (bmw, mclaren) or an iRacing paint folder name
-    [string]$Build = "",       # build tag, e.g. 1 or v3; default = newest build in <project>\out
-    [string]$Finish = "gloss",   # any _spec_<name>.tga the build has
+    [string]$Car = "",         # car key from cars\ (bmw-m4-gt3, porsche-992-cup, ...) or an iRacing paint folder name
+    [string]$Build = "",       # build tag, e.g. 1 or v3; default = newest build in <project>\<car>\out
+    [switch]$Final,            # install the approved set in <project>\<car>\final (paint.tga + spec.tga)
+    [string]$Variant = "",     # colourway subfolder of final\ when a car has more than one
+    [string]$Finish = "gloss",   # any spec_<name>.tga the build / final has
     [string]$CustomerId = "",  # remembered after the first use
     [switch]$Grid,             # install cars\<car>\grid.tga (mapping grid, no spec)
     [switch]$Seams,            # install cars\<car>\seams.tga (seam ruler, tools\seams.py)
@@ -35,16 +37,17 @@ function Get-Cars {
 }
 
 function Get-Builds([string]$proj, [string]$car) {
-    $out = Join-Path (Join-Path $Liveries $proj) "out"
-    if (-not (Test-Path $out)) { return @() }
-    $pattern = if ($car) { "${proj}_${car}*.tga" } else { "${proj}_*.tga" }
-    Get-ChildItem $out -Filter $pattern | Where-Object { $_.BaseName -notmatch '_spec(_|$)' -and $_.BaseName -notmatch 'grid' } |
-        Sort-Object LastWriteTime -Descending
+    # builds live in liveries\<project>\<car>\out, named <project>_<car>_<build>.tga
+    $dirs = if ($car) { @(Join-Path (Join-Path (Join-Path $Liveries $proj) $car) "out") }
+            else { Get-ChildItem (Join-Path $Liveries $proj) -Directory | ForEach-Object { Join-Path $_.FullName "out" } }
+    $dirs | Where-Object { Test-Path $_ } | ForEach-Object {
+        Get-ChildItem $_ -Filter "${proj}_*.tga" | Where-Object { $_.BaseName -notmatch '_spec(_|$)' -and $_.BaseName -notmatch 'grid' }
+    } | Sort-Object LastWriteTime -Descending
 }
 
 function Show-Help {
     $cars = Get-Cars
-    $projects = Get-ChildItem $Liveries -Directory -ErrorAction SilentlyContinue | Where-Object { Test-Path (Join-Path $_.FullName "out") } |
+    $projects = Get-ChildItem $Liveries -Directory -ErrorAction SilentlyContinue | Where-Object { Get-ChildItem $_.FullName -Directory | Where-Object { Test-Path (Join-Path $_.FullName "out") } } |
         ForEach-Object { $_.Name }
     $saved = if (Test-Path $IdFile) { (Get-Content $IdFile -Raw).Trim() } else { "none yet" }
     Write-Host @"
@@ -53,17 +56,21 @@ install_paint.ps1: copy a livery into iRacing's paint folder.
 
 USAGE (run from anywhere)
   .\install_paint.ps1 -Project <folder> -Car <car> [-Build <tag>] [-Finish <name>] [-CustomerId <id>]
+  .\install_paint.ps1 -Project <folder> -Car <car> -Final [-Variant <name>] [-Finish <name>]
   .\install_paint.ps1 -Car <car> -Grid                  install the car's mapping grid
   .\install_paint.ps1 -Car <car> -Seams                 install the seam ruler (-SeamCheck: the stripe test)
   .\install_paint.ps1 -Car <car> -File <paint.tga> [-SpecFile <spec.tga>]
   .\install_paint.ps1 -Project <folder> [-Car <car>] -List    show available builds
 
 OPTIONS
-  -Project     livery folder in liveries\. Files come from liveries\<folder>\out\<folder>_<car>_<build>.tga
+  -Project     livery folder in liveries\. Builds come from liveries\<folder>\<car>\out\<folder>_<car>_<build>.tga
   -Car         car key (below) or an iRacing paint folder name (Documents\iRacing\paint\...)
   -Build       build tag (e.g. 1, v3). Leave out to install the newest build.
-  -Finish      which spec file: gloss = _spec.tga, anything else = _spec_<name>.tga (e.g. metal,
-               chrome, gold). -List shows the finishes each build has
+  -Final       install the approved set from liveries\<folder>\<car>\final\ instead of a build:
+               paint.tga + spec.tga (spec.tga is THE spec to use; spec_<name>.tga are optional alternates).
+               If final\ holds colourway subfolders, pick one with -Variant.
+  -Finish      which spec file: gloss = the default (_spec.tga / spec.tga), anything else = the alternate
+               (_spec_<name>.tga / spec_<name>.tga, e.g. metal, chrome, gold). -List shows each build's finishes
   -CustomerId  your iRacing customer ID (iRacing account page). Remembered after the first time.
   -Grid        install cars\<car>\grid.tga, the labelled grid for mapping a car
   -Seams       install cars\<car>\seams.tga, the seam ruler (tools\seams.py ruler <car>)
@@ -76,9 +83,10 @@ PROJECTS:    $(if ($projects) { $projects -join ', ' } else { 'none built yet' }
 CUSTOMER ID: $saved
 
 EXAMPLES
-  .\install_paint.ps1 -Project example -Car bmw -CustomerId 123456
-  .\install_paint.ps1 -Project mylivery -Car mclaren -Build 3 -Finish metal
-  .\install_paint.ps1 -Car bmw -Grid
+  .\install_paint.ps1 -Project example -Car bmw-m4-gt3 -CustomerId 123456
+  .\install_paint.ps1 -Project mylivery -Car mclaren-720s-gt3 -Build 3 -Finish metal
+  .\install_paint.ps1 -Project mylivery -Car porsche-992-cup -Final
+  .\install_paint.ps1 -Car bmw-m4-gt3 -Grid
 
 After installing, press Ctrl+R in the sim to reload paints.
 If Windows says running scripts is disabled, first run:  Set-ExecutionPolicy -Scope Process Bypass
@@ -93,7 +101,7 @@ if ($Project) { $Project = Split-Path $Project.TrimEnd('\', '/') -Leaf }   # acc
 if ($List) {
     if (-not $Project) { throw "-List needs -Project. Run with no options for help." }
     $builds = Get-Builds $Project $Car
-    if (-not $builds) { Write-Host "No builds in liveries\$Project\out$(if ($Car) { " for $Car" })."; exit 0 }
+    if (-not $builds) { Write-Host "No builds in liveries\$Project$(if ($Car) { "\$Car" })\out."; exit 0 }
     $builds | ForEach-Object {
         $specs = Get-ChildItem $_.DirectoryName -Filter "$($_.BaseName)_spec*.tga" |
             ForEach-Object { ($_.BaseName -replace '^.*_spec_?', '') } | ForEach-Object { if ($_) { $_ } else { "gloss" } }
@@ -142,26 +150,40 @@ if ($Grid -or $Seams -or $SeamCheck) {
     if ($SpecFile) { $spec = $SpecFile }
 } else {
     if (-not $Project) { throw "Give a livery folder with -Project (or use -Grid / -Seams / -File). Run with no options for help." }
-    $out = Join-Path (Join-Path $Liveries $Project) "out"
-    if (-not (Test-Path $out)) { throw "No output folder: $out. Build the livery first." }
-    if ($Build) {
-        $base = "${Project}_${Car}_$Build"
-    } else {
-        $newest = Get-Builds $Project $Car | Select-Object -First 1
-        if (-not $newest) { throw "No builds named ${Project}_${Car}*.tga in $out. Try -List, or -File." }
-        $base = $newest.BaseName
-    }
-    $paint = Join-Path $out "$base.tga"
+    $carDir = Join-Path (Join-Path $Liveries $Project) $Car
     $suffix = if ($Finish -eq "gloss") { "" } else { "_$Finish" }
-    $spec = Join-Path $out "${base}_spec$suffix.tga"
-    if (-not (Test-Path $spec)) {
-        if ($PSBoundParameters.ContainsKey("Finish")) {
-            $have = Get-ChildItem $out -Filter "${base}_spec*.tga" |
-                ForEach-Object { ($_.BaseName -replace '^.*_spec_?', '') } | ForEach-Object { if ($_) { $_ } else { "gloss" } }
-            throw "No '$Finish' finish for $base. This build has: $($have -join ', ')"
+    if ($Final) {
+        $fin = Join-Path $carDir "final"
+        if ($Variant) { $fin = Join-Path $fin $Variant }
+        $paint = Join-Path $fin "paint.tga"
+        if (-not (Test-Path $paint)) {
+            $variants = if (Test-Path (Join-Path $carDir "final")) { (Get-ChildItem (Join-Path $carDir "final") -Directory | Where-Object { $_.Name -ne "archive" } | ForEach-Object { $_.Name }) -join ', ' }
+            throw "No paint.tga in $fin.$(if ($variants) { " Colourways in final\: $variants (use -Variant)." } else { " This car has no final yet: use -Build or leave -Final out." })"
         }
-        Write-Host "No spec file ($spec): installing the paint without one." -ForegroundColor Yellow
-        $spec = $null
+        $spec = Join-Path $fin "spec$suffix.tga"
+        $have = Get-ChildItem $fin -Filter "spec*.tga" | ForEach-Object { ($_.BaseName -replace '^spec_?', '') } | ForEach-Object { if ($_) { $_ } else { "gloss" } }
+        if (-not (Test-Path $spec)) { throw "No '$Finish' finish in $fin. It has: $($have -join ', ')" }
+    } else {
+        $out = Join-Path $carDir "out"
+        if (-not (Test-Path $out)) { throw "No output folder: $out. Build the livery for this car first." }
+        if ($Build) {
+            $base = "${Project}_${Car}_$Build"
+        } else {
+            $newest = Get-Builds $Project $Car | Select-Object -First 1
+            if (-not $newest) { throw "No builds named ${Project}_${Car}*.tga in $out. Try -List, -Final, or -File." }
+            $base = $newest.BaseName
+        }
+        $paint = Join-Path $out "$base.tga"
+        $spec = Join-Path $out "${base}_spec$suffix.tga"
+        if (-not (Test-Path $spec)) {
+            if ($PSBoundParameters.ContainsKey("Finish")) {
+                $have = Get-ChildItem $out -Filter "${base}_spec*.tga" |
+                    ForEach-Object { ($_.BaseName -replace '^.*_spec_?', '') } | ForEach-Object { if ($_) { $_ } else { "gloss" } }
+                throw "No '$Finish' finish for $base. This build has: $($have -join ', ')"
+            }
+            Write-Host "No spec file ($spec): installing the paint without one." -ForegroundColor Yellow
+            $spec = $null
+        }
     }
 }
 foreach ($f in @($paint, $spec) | Where-Object { $_ }) {

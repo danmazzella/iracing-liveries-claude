@@ -1,6 +1,6 @@
 """Side-view projection data for the BMW: grid-screenshot labels + mockup landmarks.
 
-labels: (screen x, y in cars/bmw/grid_side_right.webp) -> grid cell (col, row). Read by eye.
+labels: (screen x, y in cars/bmw-m4-gt3/grid_side_right.webp) -> grid cell (col, row). Read by eye.
 landmarks: (screen x, y in grid_side_right flipped left-right) -> (x, y in mockup_v2.jpg side view).
 """
 LABELS = [

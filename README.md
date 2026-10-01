@@ -174,35 +174,35 @@ Good first messages:
 This is how every livery gets made. Expect several rounds. That's normal.
 
 1. **Claude builds** your livery and tells you where the files are, e.g.
-   `liveries\mylivery\out\mylivery_bmw_1.tga` (the paint) and `..._spec.tga` (the finish: gloss, metallic...).
+   `liveries\mylivery\bmw-m4-gt3\out\mylivery_bmw-m4-gt3_1.tga` (the paint) and `..._spec.tga` (the finish: gloss, metallic...).
 2. **Install it** with the installer in the `tools` folder (PowerShell). Tell it which livery
    folder and which car; it picks the newest build:
    ```
    cd $HOME\Documents\iracing-paints\tools
    Set-ExecutionPolicy -Scope Process Bypass
-   .\install_paint.ps1 -Project mylivery -Car bmw -CustomerId 123456
+   .\install_paint.ps1 -Project mylivery -Car bmw-m4-gt3 -CustomerId 123456
    ```
    - Run `.\install_paint.ps1` with no options to see every option, the cars and livery
      folders it found, and examples.
    - `-CustomerId`: your iRacing customer ID (on your iRacing account page). Only needed the
      first time; the script remembers it.
-   - `-Car`: `bmw` or `mclaren` (mapped cars), or the car's folder name in
+   - `-Car`: the car's key, e.g. `bmw-m4-gt3` or `mclaren-720s-gt3` (mapped cars, the folders in `cars\`), or the car's folder name in
      `Documents\iRacing\paint\`. That folder only exists once you've driven the car in iRacing.
-   - `-Build 3` installs build 3 instead of the newest; `-Finish metal` or `-Finish chrome`
-     picks another finish if the livery made one; `-List` shows the builds you have.
+   - `-Build 3` installs build 3 instead of the newest; `-Final` installs the approved set from `final\`;
+     `-Finish metal` or `-Finish chrome` picks another finish if the livery made one; `-List` shows the builds you have.
    - The `Set-ExecutionPolicy` line lets Windows run the script, for that window only.
-   - Built on a Mac? Copy the `out` folder to the PC first (USB stick, cloud drive...).
+   - Built on a Mac? Copy the livery's `<car>\out` folder (or `final`) to the PC first (USB stick, cloud drive...).
 3. **Look at it in iRacing.** Open the car (Test Drive is easiest), and press **Ctrl+R** to
    reload paints after each install.
 4. **Screenshot it** from a few angles (front, side, rear, top) and save the images **into this
-   folder** (e.g. `mylivery\reference\v1_front.png`). Then tell Claude the file path and what you
+   folder** (e.g. `mylivery\bmw-m4-gt3\reference\v1_front.png`). Then tell Claude the file path and what you
    want changed:
-   > Screenshots are in `mylivery/reference/v1_*.png`. The stripe is too far forward on the
+   > Screenshots are in `mylivery/bmw-m4-gt3/reference/v1_*.png`. The stripe is too far forward on the
    > hood and the door logo is cut off at the back. Everything else is good, keep it.
 
    Be specific about **where** ("on the front bumper, left of the grille") and say what's good,
    so it doesn't get changed.
-5. Repeat until you love it. Ask Claude to copy the approved version into `mylivery/final/`.
+5. Repeat until you love it. Ask Claude to copy the approved version into `mylivery/bmw-m4-gt3/final/`.
 
 **Good to know:**
 - iRacing adds **your car number** itself. Pick the number and wheel colours in iRacing's
@@ -273,7 +273,7 @@ tools/grid.py         makes the mapping grid for a new car / lists template laye
 tools/seams.py        maps where panels meet, so graphics line up across them
 tools/install_paint.ps1   copies a paint into iRacing (Windows)
 tools/labelproj.py    advanced: projects a reference image onto the paint file
-liveries/<livery>/    one folder per livery (only liveries/example/ is shared)
+liveries/<livery>/<car-key>/   one folder per livery, one per car inside (only liveries/example/ is shared)
 liveries/example/     a minimal livery to start from
 psd/                  iRacing's car templates go here (only its README is shared)
 logos/                put your logos here (only its README is shared)

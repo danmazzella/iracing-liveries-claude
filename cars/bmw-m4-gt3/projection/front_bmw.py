@@ -1,4 +1,4 @@
-"""Front-view projection data: labels read from cars/bmw/grid_front.webp, landmarks to mockup_v2 front view."""
+"""Front-view projection data: labels read from cars/bmw-m4-gt3/grid_front.webp, landmarks to mockup_v2 front view."""
 LABELS = [
     ((270, 610), (6, 15)), ((380, 610), (6, 16)), ((360, 675), (5, 16)), ((470, 660), (5, 17)),
     ((600, 640), (5, 18)), ((695, 655), (5, 19)), ((580, 720), (4, 18)), ((690, 735), (4, 19)),

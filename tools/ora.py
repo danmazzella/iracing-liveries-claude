@@ -4,7 +4,7 @@ A livery script normally flattens everything into one TGA. To get an editable fi
 part onto its own transparent RGBA layer and hand the list to `write`:
 
     sys.path.insert(0, os.path.join(REPO, "tools")); import ora
-    ora.write("out/mylivery_bmw_1.ora", [            # bottom -> top, like the Layers panel read upward
+    ora.write("bmw-m4-gt3/out/mylivery_bmw-m4-gt3_1.ora", [            # bottom -> top, like the Layers panel read upward
         ora.Layer("base", base),
         ora.Layer("stripe", stripe),
         ora.Layer("trim (template)", trim),

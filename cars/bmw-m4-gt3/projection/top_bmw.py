@@ -1,4 +1,4 @@
-"""Top-view projection data: labels read from cars/bmw/grid_top.webp, landmarks to mockup_v2 top view."""
+"""Top-view projection data: labels read from cars/bmw-m4-gt3/grid_top.webp, landmarks to mockup_v2 top view."""
 _L = """
 250 160 6 15|190 230 5 16|245 220 6 16|180 275 5 17|170 330 5 18|160 385 5 19|210 380 6 19|275 375 7 19
 340 372 8 19|400 372 9 19|470 372 10 19|100 455 4 20|155 445 5 20|210 440 6 20|270 437 7 20|330 433 8 20

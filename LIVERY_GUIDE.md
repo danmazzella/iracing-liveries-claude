@@ -12,12 +12,12 @@ Read this first, then `cars/<car>/README.md` for the car you're painting.
 ## 1. How it works
 
 Liveries are **Python scripts** that draw straight onto iRacing's 2048x2048 paint sheet
-(Pillow + numpy). Each livery lives in its own folder under `liveries/` and writes into `liveries/<livery>/out/`, named
-`<livery>_<car>_<build>` so the installer can find it (`<car>` = the folder name in `cars/`):
+(Pillow + numpy). Each livery lives in its own folder under `liveries/` and writes into `liveries/<livery>/<car-key>/out/`, named
+`<livery>_<car-key>_<build>` so the installer can find it (`<car-key>` = the folder name in `cars/`):
 
 | File | What it is |
 |---|---|
-| `<livery>_<car>_<build>.tga` | the paint: 24-bit RGB, 2048x2048 |
+| `<livery>_<car-key>_<build>.tga` | the paint: 24-bit RGB, 2048x2048 |
 | `..._spec.tga` | the spec map (finish: metallic / roughness / clearcoat). Optional extra finishes: `_spec_metal.tga`, `_spec_chrome.tga` |
 | `..._preview.png` | the paint with the template's not-paintable mask drawn over it, for checking |
 
@@ -26,7 +26,7 @@ and repeat. Code (not Photoshop) makes it cheap to change one number and rebuild
 the design onto both sides automatically, and to write several finishes at once.
 
 Minimal working example: `liveries/example/livery.py`. Grid/mapping tool: `tools/grid.py`.
-Installer: `tools/install_paint.ps1 -Project <livery> -Car <car> [-Build N] [-Finish metal]`
+Installer: `tools/install_paint.ps1 -Project <livery> -Car <car-key> [-Build N | -Final] [-Finish metal]`
 (run it with no options for help). It maps car keys to iRacing folders from the
 `iRacing paint folder: \`...\`` line in `cars/<car>/README.md`, so keep that line in every car README.
 
@@ -42,12 +42,67 @@ Installer: `tools/install_paint.ps1 -Project <livery> -Car <car> [-Build N] [-Fi
 - **One custom paint per car per account.** Installing a livery replaces whatever was on that
   car. Different cars are independent.
 - **iRacing draws the car number** on the template's number blocks. Never paint numbers.
+  It draws a plate (white on the Valkyrie) over the whole block: a team number card must be bigger
+  than the block (BMW: x1.47 along the number, x1.78 across) for its header/footer to show.
   Leave the number block areas plain (or put a clean card behind them).
 - Wheel colour and tyre sidewall colour are set in iRacing's paint screen, not in our files.
-- Car folders found so far: BMW M4 GT3 = `bmwm4gt3`, McLaren 720S GT3 EVO = `mclaren720sgt3`, Lotus 79 = `lotus79`, Formula IR04 (F4) = `formulair04`.
+- Car folders found so far: BMW M4 GT3 = `bmwm4gt3`, McLaren 720S GT3 EVO = `mclaren720sgt3`, Lotus 79 = `lotus79`, Formula IR04 (F4) = `formulair04`, Aston Martin Valkyrie GTP = `amvalkyriegtp`.
   For another car, look in `Documents\iRacing\paint\` (the folder appears once you've
   driven the car).
 - Your customer ID is on your iRacing account page.
+
+### Car keys (naming rule)
+
+A car key names `cars/<key>/`, the livery output files (`<livery>_<key>_<build>`) and the installer's `-Car`.
+**New cars: `<make>-<model>-<class>`, lowercase, hyphens, specific enough that a sibling car can't
+share it** (several makes have a GT3 and a GT4, a Cup car and a GT3 R...). The iRacing paint folder is
+separate and always recorded in the car README (`iRacing paint folder: \`...\``).
+
+| Key | Car | iRacing folder |
+|---|---|---|
+| `bmw-m4-gt3` | BMW M4 GT3 | `bmwm4gt3` |
+| `mclaren-720s-gt3` | McLaren 720S GT3 EVO | `mclaren720sgt3` |
+| `ferrari-296-gt3` | Ferrari 296 GT3 | `ferrari296gt3` |
+| `lotus-79` | Lotus 79 | `lotus79` |
+| `formula-ir04` | Formula IR04 (F4) | `formulair04` |
+| `aston-martin-valkyrie-gtp` | Aston Martin Valkyrie GTP | `amvalkyriegtp` |
+| `porsche-992-cup` | Porsche 911 GT3 Cup (992.2) | `porsche9922cup` (`porsche992cup` is the older 992 Cup) |
+
+The old short keys (`bmw`, `mclaren`, `ferrari`, `lotus79`, `ir04`, `valkyrie`) are retired: scripts refuse
+them with a pointer to the new key. Never reuse a key for a different car (a BMW GT4 is `bmw-m4-gt4`).
+
+### Livery folder layout
+
+One folder per livery; inside it one folder per car (named by the car key). Scripts stay at the livery
+level because one script usually serves several cars.
+
+```
+liveries/<livery>/
+  CLAUDE.md, livery.py ...      design notes + version log, the scripts
+  <car-key>/
+    out/                        every build: <livery>_<car-key>_<build>.tga, _spec.tga, _spec_<finish>.tga, _preview.png
+    reference/                  in-sim screenshots for this car
+    final/                      THE approved set (see below)
+    archive/                    superseded finals
+  _misc/                      things that don't belong to one car (concept builds, old scripts)
+```
+
+**`final/` is what you install** (`install_paint.ps1 -Project <livery> -Car <car-key> -Final`):
+
+| File | Meaning |
+|---|---|
+| `paint.tga` | the approved paint |
+| `spec.tga` | **the spec to use** (the approved finish; `NOTES.md` names which finish it is) |
+| `spec_<finish>.tga` | optional alternates (`metal`, `chrome`, `gold`, `shimmer`, `bold`, `shiny`, `standard`...) |
+| `livery_vN.py` etc. | the script(s) that made it |
+| `NOTES.md` | what the finish names mean, build number, install command |
+
+A car with several colourways has `final/<variant>/` folders with the same files (`-Variant <name>`).
+When you approve a build, copy it to `final/` under these names and make `spec.tga` the finish you
+actually chose, never just whichever file happens to have no suffix.
+
+Finish names: the plain `spec.tga` / `_spec.tga` is the default (`-Finish gloss` in the installer, "default" in the GUI), so never name an
+alternate `gloss`. Keep only the newest build per car in `out/`; older ones are replaceable from the script (approved ones live in `final/`).
 
 ---
 
@@ -116,7 +171,7 @@ So map every new car first:
 5. **Map the seams** (section 4b) for any panels a design will cross (hood/bumper,
    fender/door, roof/pillars...).
 
-Already mapped here: **BMW M4 GT3** (`cars/bmw/`), **McLaren 720S GT3 EVO** (`cars/mclaren/`), **Lotus 79** (`cars/lotus79/`), **Formula IR04 / F4** (`cars/ir04/`), **Ferrari 296 GT3** (`cars/ferrari/`).
+Already mapped here: **BMW M4 GT3** (`cars/bmw-m4-gt3/`), **McLaren 720S GT3 EVO** (`cars/mclaren-720s-gt3/`), **Lotus 79** (`cars/lotus-79/`), **Formula IR04 / F4** (`cars/formula-ir04/`), **Ferrari 296 GT3** (`cars/ferrari-296-gt3/`), **Aston Martin Valkyrie GTP** (`cars/aston-martin-valkyrie-gtp/`); **Porsche 992.2 Cup** (`cars/porsche-992-cup/`, part table done 2026-10-01, seams not read).
 
 Some templates' `Mask` covers almost nothing. The panel (UV island) outlines are then drawn in the
 wireframe layer (Lotus 79: pure green lines in `Wire`): label the regions enclosed by them to get
@@ -298,6 +353,11 @@ Rules of thumb:
   bleeds ~10 px past each panel edge and can even join strips that are still cut in 3D (the
   mask-based fix left a visible step; the outline-based one closed it to 1-2 px).
 
+- **Islands that touch in 3D but sit far apart on the sheet** (Valkyrie roof/engine cover, spine, fin):
+  a sheet-coordinate pattern (collage, noise) breaks up across them. Cheapest fix: fill those islands
+  with a regular small pattern that doesn't need to line up (polka dots), picked by seed point
+  inside the Wire outlines (`calm` in `liveries/polkadot`). Otherwise map the seams (4b).
+
 **Shapes**
 - Reference designs are usually **curved** (they follow body lines). Use Bezier edges, not
   straight polygons. Check which way a curve bulges in-sim: on the BMW bumper (x = height), a
@@ -330,6 +390,13 @@ Rules of thumb:
   IR04 rot 0. **Roof logos too**: letter tops toward the rear (sheet +x when the front is on the left),
   e.g. rot -90 for text across the BMW/McLaren roof (rot 90 = top toward the nose, rejected). Roof
   mascots too: the polkadot roof hornet was flipped the same way (rot 90 -> -90, head toward the rear).
+**Crayon / hand-drawn look (elmers-glue, Porsche)**
+- Crayon reads as crayon when it is **mostly solid wax with a few broad stroke bands in one direction** plus waxy grain gaps. Regular crossing hatching reads as a picnic blanket (plaid).
+- Raster logo art (user drawings) on a dark base needs a **cream paper label or a paper-cutout edge** behind it (flood-fill the background, dilate ~20 px, fill holes): the unfilled interior otherwise shows the base colour.
+- Composite logo stamps **after** glitter/sparkle layers, or the sparkles draw over them.
+- Before placing a large logo, check the car README for 3D parts (hood vents, deck cut-outs): the flat preview hides how much they cover. Roof is usually the safest big canvas.
+- Paper whites read beige in the sim; keep label paper bright (#FBF8F1 or lighter).
+
 - Logo orientation: work out the rotation per spot (a hood mascot at rot 90 looked upside
   down; rot −90 was right). Put rotation in the per-car config and confirm in-sim.
 
@@ -342,7 +409,7 @@ We tried to reproduce an AI-rendered mockup exactly.
 - **Hand-placing polygons by eye drifted badly** (8 rounds, no convergence).
 - **Projecting the mockup's pixels onto the sheet** works geometrically (`tools/labelproj.py`):
   read `(screen px) → (col,row)` from the grid screenshots for visible labels in each view
-  (`cars/bmw/projection/*_bmw.py` holds those for the BMW: front, side, rear, top), add ~10
+  (`cars/bmw-m4-gt3/projection/*_bmw.py` holds those for the BMW: front, side, rear, top), add ~10
   landmarks between the screenshot and the mockup (wheel hubs, lights, roundel), and
   thin-plate splines compose to sheet → mockup. The side view is mirrored for the other side.
 - **But the projected paint was rejected** as a livery: an AI render is too low-res and has
@@ -379,15 +446,15 @@ Ideas that worked, to reuse or remix:
 
 1. New car? Map it (section 4). Existing car? Read `cars/<car>/README.md`.
 2. Describe the design (or give a reference image). Claude writes the livery script in its own
-   folder (`liveries/<livery>/livery.py`, `.../out/`), builds, and checks the preview (crop and zoom
+   folder (`liveries/<livery>/livery.py`, builds in `.../<car-key>/out/`), builds, and checks the preview (crop and zoom
    on problem areas; draw the mask over it).
 3. Install (`tools/install_paint.ps1 -Project <livery> -Car <car>`), Ctrl+R, take screenshots from the same angles each time.
-4. **Save screenshots as files in the repo** (`liveries/<livery>/reference/`) and give Claude the path.
+4. **Save screenshots as files in the repo** (`liveries/<livery>/<car-key>/reference/`) and give Claude the path.
    Screenshots pasted into chat aren't always saved as files, and `/tmp` gets wiped.
 5. Claude fixes and **writes down what it learned**: version notes in `liveries/<livery>/CLAUDE.md`
    (what changed, what the in-sim result was), placement facts in `cars/<car>/README.md`,
    general lessons here.
-6. Number every build (v1, v2, ...). Copy approved builds to `liveries/<livery>/final/` together with a
+6. Number every build (v1, v2, ...). Copy approved builds to `liveries/<livery>/<car-key>/final/` (`paint.tga`, `spec.tga`, ...: section 2) together with a
    copy of the script that made them.
 
 Feedback that helped: say what's wrong **and where** ("orange too high above the headlight on

@@ -1,4 +1,4 @@
-"""Rear-view projection data: labels read from cars/bmw/grid_rear.webp (bumper columns = rows,
+"""Rear-view projection data: labels read from cars/bmw-m4-gt3/grid_rear.webp (bumper columns = rows,
 screen height = sheet column), landmarks to mockup_v2 rear view."""
 _X = {23: 445, 22: 570, 21: 700, 20: 830, 19: 955, 18: 1075, 17: 1190}
 _Y = {27: 680, 28: 740, 29: 830, 30: 915}

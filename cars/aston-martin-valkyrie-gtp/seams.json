@@ -1,0 +1,77 @@
+{
+ "note": "Read 2026-09-30 from seam_top_left.webp / seam_top_right.webp (top views). Only the engine-cover seams: nose C / hood A already touch on the sheet (x 284). No mirror_y: B, L, M are in the unmirrored top band; both sides of R read. Re-read at 4x zoom (ticks where they touch the seam). Fin seams (L/M) folded the stripe test: not used by the livery.",
+ "seams": [
+  {
+   "name": "spine R / engine cover B, left",
+   "pairs": [
+    [
+     "R8",
+     "B46.26"
+    ],
+    [
+     "R10",
+     "B44.59"
+    ],
+    [
+     "R12",
+     "B42.98"
+    ]
+   ]
+  },
+  {
+   "name": "spine R / engine cover B, right",
+   "pairs": [
+    [
+     "R25",
+     "B62.37"
+    ],
+    [
+     "R26",
+     "B61.39"
+    ],
+    [
+     "R27",
+     "B60.38"
+    ],
+    [
+     "R28",
+     "B59.37"
+    ]
+   ]
+  },
+  {
+   "name": "fin L / spine R, left",
+   "pairs": [
+    [
+     "R17",
+     "L8.96"
+    ],
+    [
+     "R16",
+     "L10.04"
+    ],
+    [
+     "R14",
+     "L12.08"
+    ]
+   ]
+  },
+  {
+   "name": "fin M / spine R, right",
+   "pairs": [
+    [
+     "R22",
+     "M4.64"
+    ],
+    [
+     "R21",
+     "M5.73"
+    ],
+    [
+     "R20",
+     "M6.9"
+    ]
+   ]
+  }
+ ]
+}

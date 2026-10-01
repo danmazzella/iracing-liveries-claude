@@ -3,7 +3,7 @@
 Template: `BMW M4 GT3.psd` (repo root). iRacing paint folder: `bmwm4gt3`.
 
 Files here:
-- `grid.tga` — the labelled grid (install with `tools/install_paint.ps1 -Car bmw -Grid`)
+- `grid.tga` — the labelled grid (install with `tools/install_paint.ps1 -Car bmw-m4-gt3 -Grid`)
 - `projection/` — per-view `(screen px) -> (col,row)` label readings from the grid screenshots (+ landmarks to our own mockup), for `tools/labelproj.py`
 - `uv_*.webp` — screenshots of the failed colour-code approach (`tools/uvcode.py`), kept for reference
 - `grid_sheet.png` — flat grid with the template mask drawn over it

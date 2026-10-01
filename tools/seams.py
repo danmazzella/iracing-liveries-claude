@@ -30,7 +30,7 @@ joined, so anything drawn across a seam continues on the other panel automatical
 
 In a livery:
     sys.path.insert(0, "../../tools"); import seams
-    car = seams.Car("bmw")
+    car = seams.Car("bmw-m4-gt3")
     u = car.unfold("H")                      # root panel; everything seamed to it gets attached
     X, Y, on = u.field()                     # design coords of every sheet pixel on those panels
     sheet_rgba = u.pull(design_rgba)         # or draw on a design canvas and pull it onto the sheet

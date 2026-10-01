@@ -10,8 +10,8 @@ and Krita open: out/example_<car>.ora (paint) and _spec.ora (finish). Use them t
 by hand (LIVERY_GUIDE section 11).
 
     cd example
-    ../../.venv/bin/python livery.py bmw         -> out/example_bmw.tga, _spec.tga, _preview.png, .ora, _spec.ora
-    ../../.venv/bin/python livery.py mclaren
+    ../../.venv/bin/python livery.py bmw-m4-gt3 -> bmw-m4-gt3/out/example_bmw-m4-gt3.tga, _spec.tga, _preview.png, .ora, _spec.ora
+    ../../.venv/bin/python livery.py mclaren-720s-gt3
 
 Read ../../LIVERY_GUIDE.md and ../../cars/<car>/README.md before placing anything.
 """
@@ -25,18 +25,18 @@ from psd_tools import PSDImage
 REPO = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.insert(0, os.path.join(REPO, "tools"))
 import ora  # noqa: E402
+import paths  # noqa: E402
 
-OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "out")
 SIZE = 2048
 
 # Per-car template facts (see ../../cars/<car>/README.md). Put your PSDs in psd/.
 CARS = {
-    "bmw": dict(psd="BMW M4 GT3.psd", mask="Mask", trim="Carbon Fiber", top="Car_decal",
+    "bmw-m4-gt3": dict(psd="BMW M4 GT3.psd", mask="Mask", trim="Carbon Fiber", top="Car_decal",
                 rough=("Custom Spec", "rough"), mirror_y=1311.5,
                 guides=dict(wire="wire", numbers="Number Blocks", sponsors="Sponsor"),
                 # left side, door/sill band (upright panel, larger y = car's left)
                 stripe=dict(x0=560, x1=1800, y_top=1760, y_bot=1900)),
-    "mclaren": dict(psd="McLaren 720s EVO GT3.psd", mask="Mask", trim="Car_decal", top=None,
+    "mclaren-720s-gt3": dict(psd="McLaren 720s EVO GT3.psd", mask="Mask", trim="Car_decal", top=None,
                     rough=("Custom Spec Map", "Green Channel Roughness"), mirror_y=1206.5,
                     guides=dict(wire="Wire", numbers="Number Blocks", sponsors="Sponsor Blocks"),
                     stripe=dict(x0=330, x1=1700, y_top=1760, y_bot=1880)),
@@ -107,7 +107,7 @@ def build(key):
         ora.Layer("GUIDE mask (not paintable)", mask, visible=False),
     ]
     layers = [l for l in layers if l.image.getbbox()]  # skip empty ones (McLaren has no decal layer)
-    os.makedirs(OUT, exist_ok=True)
+    OUT = paths.out_dir(os.path.dirname(os.path.abspath(__file__)), key)
     img = ora.write(os.path.join(OUT, f"example_{key}.ora"), layers)
     img.convert("RGB").save(os.path.join(OUT, f"example_{key}.tga"))   # 24-bit, no alpha
 
@@ -140,4 +140,5 @@ def build(key):
 
 
 if __name__ == "__main__":
-    build(sys.argv[1] if len(sys.argv) > 1 else "bmw")
+    args = sys.argv[1:]
+    build(paths.pick_car(args, CARS, "bmw-m4-gt3"))
