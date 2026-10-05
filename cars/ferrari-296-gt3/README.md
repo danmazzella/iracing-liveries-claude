@@ -100,3 +100,12 @@ From white-gofast v1 in-sim:
 
 Seam ruler built: `seams.tga` (125 panels, codes in `seams_sheet.png`).
 Readings in `seams.json`: none yet. Add each seam read in-sim below (which seam, screenshot, checked?).
+
+## Stalliono lessons (2026-10-05)
+- Hood paintable area is only x ~256-520 (y ~790-1260 near the nose); beyond x~540 the middle is mask (vents/scoop). Hood number board x375-477, y763-881 (car's right).
+- Roof paintable: x ~910-1210, y ~805-1265 (fits three ~170-200 px trophies side by side).
+- Engine cover scoop (mask hole) x~1550-1590, y~970-1075; deck behind it (x1630-1890) is free for a big logo.
+
+## Hood orientation (2026-10-05, slapshot-416)
+
+Hood sheet x runs FRONT -> REAR like the rest of the car: nose at low x, windshield end at high x. Calibration points: red arrow decals at (288, 870) and (288, 1177) = front hood corners (beside the stripe ends), tow arrow at (140, 1165), number board x375-477 (car's right). The scoop is at roughly x560-700, so a small logo between the scoop and the nose badge goes at about x150-200 on the centre line (y 1023.5). x600 is a seam line. (An earlier note here had the direction backwards and put a crest on the scoop.) Hood pins on the engine cover sit at about (1715, 940) and (1715, 1110): keep logos off the red arrow marks there.

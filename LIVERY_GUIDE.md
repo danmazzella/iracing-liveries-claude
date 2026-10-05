@@ -63,6 +63,8 @@ separate and always recorded in the car README (`iRacing paint folder: \`...\``)
 | `bmw-m4-gt3` | BMW M4 GT3 | `bmwm4gt3` |
 | `mclaren-720s-gt3` | McLaren 720S GT3 EVO | `mclaren720sgt3` |
 | `ferrari-296-gt3` | Ferrari 296 GT3 | `ferrari296gt3` |
+| `ford-mustang-gt3` | Ford Mustang GT3 | `fordmustanggt3` (`fordmustanggt4` is the GT4) |
+| `ford-mustang-nextgen` | Ford Mustang NASCAR Next Gen | `stockcars fordmustang2022` (has a space) |
 | `lotus-79` | Lotus 79 | `lotus79` |
 | `formula-ir04` | Formula IR04 (F4) | `formulair04` |
 | `aston-martin-valkyrie-gtp` | Aston Martin Valkyrie GTP | `amvalkyriegtp` |
@@ -171,7 +173,7 @@ So map every new car first:
 5. **Map the seams** (section 4b) for any panels a design will cross (hood/bumper,
    fender/door, roof/pillars...).
 
-Already mapped here: **BMW M4 GT3** (`cars/bmw-m4-gt3/`), **McLaren 720S GT3 EVO** (`cars/mclaren-720s-gt3/`), **Lotus 79** (`cars/lotus-79/`), **Formula IR04 / F4** (`cars/formula-ir04/`), **Ferrari 296 GT3** (`cars/ferrari-296-gt3/`), **Aston Martin Valkyrie GTP** (`cars/aston-martin-valkyrie-gtp/`); **Porsche 992.2 Cup** (`cars/porsche-992-cup/`, part table done 2026-10-01, seams not read).
+Already mapped here: **BMW M4 GT3** (`cars/bmw-m4-gt3/`), **McLaren 720S GT3 EVO** (`cars/mclaren-720s-gt3/`), **Lotus 79** (`cars/lotus-79/`), **Formula IR04 / F4** (`cars/formula-ir04/`), **Ferrari 296 GT3** (`cars/ferrari-296-gt3/`), **Aston Martin Valkyrie GTP** (`cars/aston-martin-valkyrie-gtp/`); **Porsche 992.2 Cup** (`cars/porsche-992-cup/`, part table done 2026-10-01, seams not read); **Ford Mustang GT3** (`cars/ford-mustang-gt3/`, first-pass part table 2026-10-01, bumpers approximate, seams not read); **Ford Mustang NASCAR Next Gen** (`cars/ford-mustang-nextgen/`, first-pass part table 2026-10-01; nose at HIGH x, centre line y ~ 1280, left side = low rows; bumpers/spoiler approximate, seams not read).
 
 Some templates' `Mask` covers almost nothing. The panel (UV island) outlines are then drawn in the
 wireframe layer (Lotus 79: pure green lines in `Wire`): label the regions enclosed by them to get
@@ -287,6 +289,26 @@ What we measured in the sim (values 0-255):
 | Orange under "metal"/"chrome" finish | up to ~170 | 2-6 | OK on a bright base (`#FF7300`); 235 went too dark |
 | Chrome | 160-245 | 2 | strong reflections; colours get darker off-angle |
 | Orange pinstripes as "gold leaf" (on navy) | 150 | 4 | darker bronze-gold orange: a retro JPS gold look (Lotus 79) |
+
+**Spec calibration test (2026-10-01, `liveries/spec-test`, BMW, flat red `#C8102E`, garage, front 3/4)**.
+iRacing's own page (iracing.com/custom-paint-textures) says: R = metallic ("typically a yes or no question"),
+G = roughness (0 smooth/reflective, 255 rough), B = clearcoat ("left white typically"), **A = specular mask**
+(switches environment reflections off; 32-bit TGA when used). Metallic paint must be much lighter than normal.
+Banded grids in the sim agree, with caveats:
+
+| Channel | Measured |
+|---|---|
+| R metallic | solid 255 (with G 0) turned the red deep and dark with strong reflections. Grids at 60-240 (G 0-64) looked identical to the no-spec baseline. So on this red, metallic is close to a switch near 255; the older bronze/muddy readings at 110-215 above were on orange, so intermediate values may show on other colours. Don't count on a smooth ramp |
+| G roughness | solid 255 (R 0) = flat chalky matte, clearly different from the glossy baseline. A non-metal grid 96 -> 255 along the car fades gloss to matte (front bumper still glossy at 96-128, rear flat at 240-255). 0-64 looked the same as 8: clearcoat gloss hides base roughness there |
+| B clearcoat | 0-255 sweeps (R 120-240, G 8) showed no visible change |
+| A alpha | **works**: chrome (255/0, B 255) with alpha 255 -> 0 darkens smoothly; at 0 the metal has no reflections left (dark, flat). Use it to dull metal without going matte |
+| No spec file | glossy clearcoat look, similar to G 8-16 |
+
+**Applied spec (GoFAST BMW, `liveries/gofast/spec_pro.py`, 2026-10-01)**: the practical recipe is *material contrast*, not mid values:
+matte navy (0/190) next to gloss orange (0/4) is the biggest visible gain; a few white hex tiles as chrome (255/0, alpha 150, ~2% of the sheet) and some matte tiles (0/200) add variation.
+Chrome on text or flat near-vertical panels (windshield banner, wing) reflects the dark cockpit/sky gradient and goes **dark and muddy**: keep lettering gloss.
+Chrome tiles in the flat garage sky read dull blue-grey; keep them few. User verdict on v2: "looks better", but the difference was small.
+**Bold version wins**: big areas of real contrast (dark navy as chrome 255/0, white mosaic matte 0/200, orange gloss 0/4) - user: "I like that a lot". Go for large chrome-vs-matte regions, not subtle tile variation.
 
 Rules of thumb:
 - **Metallic darkens coloured paint** (reflections replace the base colour). Bright, saturated
