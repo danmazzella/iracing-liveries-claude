@@ -101,6 +101,18 @@ From white-gofast v1 in-sim:
 Seam ruler built: `seams.tga` (125 panels, codes in `seams_sheet.png`).
 Readings in `seams.json`: none yet. Add each seam read in-sim below (which seam, screenshot, checked?).
 
+## Car Patterns (tools/patterns.py, LIVERY_GUIDE 4c, 2026-10-14)
+
+- `patterns_sheet.png`: the template's 24 `Car Patterns` plus `001_spec` / `002_spec` (two example liveries with their specs).
+- **The gradient (`car_pattern_010`) runs red -> magenta -> blue -> cyan -> green** nose to tail, not red -> green -> blue
+  like the other cars. `patterns.py` detects the order (`gradient order rbg`); the first decode, before that, read
+  the sides backwards and missed the hood.
+- `length.npz` / `length_sheet.png`: 32 % of the sheet. Covers the hood (0 at the nose, ~30 at the windshield), front
+  fenders and arch pieces, both sides (20 -> 90), roof (30 -> 70), engine-cover sides and deck edges (90), the B-pillar
+  pieces (70). Not covered: bumpers, splitter, wing, mirrors, the middle of the engine cover (dark there).
+- No seam readings yet to check it against; use `patterns.py match` to suggest hood/fender, roof/rail and side seams
+  before a ruler round.
+
 ## Stalliono lessons (2026-10-05)
 - Hood paintable area is only x ~256-520 (y ~790-1260 near the nose); beyond x~540 the middle is mask (vents/scoop). Hood number board x375-477, y763-881 (car's right).
 - Roof paintable: x ~910-1210, y ~805-1265 (fits three ~170-200 px trophies side by side).

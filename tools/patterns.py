@@ -49,15 +49,31 @@ def _psd(key):
     return open_psd(seams.template_path(key))
 
 
-def decode(rgb):
+def gradient_order(rgb):
+    """Which way the gradient runs through the colours: "rgb" = red -> green -> blue (most cars),
+    "rbg" = red -> magenta -> blue -> cyan -> green (Ferrari 296). Told apart by which secondary
+    colour its red end blends through: yellow-ish (red + green) or magenta (red + blue)."""
+    r, g, b = (rgb[..., i].astype(np.int32) for i in range(3))
+    yellow = ((r > 80) & (g > 80) & (b < 30)).sum()
+    magenta = ((r > 80) & (b > 80) & (g < 30)).sum()
+    return "rbg" if magenta > yellow else "rgb"
+
+
+def decode(rgb, order=None):
     """Gradient RGB (HxWx3 uint8) -> length 0..1, NaN where it isn't the gradient (black parts,
-    greys, the flat red/blue ends)."""
+    greys, the flat ends). `order` from gradient_order() (detected when None)."""
+    order = order or gradient_order(rgb)
     hsv = np.asarray(Image.fromarray(rgb).convert("HSV")).astype(np.float32) / 255
     r, g, b = (rgb[..., i].astype(np.float32) for i in range(3))
-    # red 0 -> green 0.5 -> blue 1, from channel ratios (finer than the 8-bit hue)
-    t = np.where(b <= r, 0.5 * g / np.maximum(r + g, 1), 0.5 + 0.5 * b / np.maximum(g + b, 1))
     hue = hsv[..., 0] * 360
-    ok = (hsv[..., 1] > 0.5) & (hsv[..., 2] > 0.3) & (hue < 245) & (t > 0.01) & (t < 0.99)
+    # first -> second 0.5 -> third 1, from channel ratios (finer than the 8-bit hue)
+    if order == "rgb":
+        t = np.where(b <= r, 0.5 * g / np.maximum(r + g, 1), 0.5 + 0.5 * b / np.maximum(g + b, 1))
+        on = hue < 245
+    else:
+        t = np.where(g <= r, 0.5 * b / np.maximum(r + b, 1), 0.5 + 0.5 * g / np.maximum(g + b, 1))
+        on = (hue > 115) | (hue < 5)
+    ok = (hsv[..., 1] > 0.5) & (hsv[..., 2] > 0.3) & on & (t > 0.01) & (t < 0.99)
     return np.where(ok, t, np.nan)
 
 
@@ -65,7 +81,9 @@ def build_length(key):
     psd = _psd(key)
     if not any(l.name == GRADIENT for l in psd.descendants()):
         sys.exit(f"{seams.template_path(key)} has no {GRADIENT}")
-    t = decode(np.asarray(layer(psd, GRADIENT).convert("RGB")))
+    rgb = np.asarray(layer(psd, GRADIENT).convert("RGB"))
+    order = gradient_order(rgb)
+    t = decode(rgb, order)
     out = seams.car_dir(key)
     np.savez_compressed(os.path.join(out, "length.npz"), t=t.astype(np.float16))
 
@@ -103,7 +121,7 @@ def build_length(key):
             continue
         d.text((cx, cy), f"{int(band[cy, cx]) * 5}", font=fnt, fill=(0, 0, 0), anchor="mm")
     img.save(os.path.join(out, "length_sheet.png"))
-    print(f"{known.mean():.0%} of the sheet has a length. wrote cars/{key}/length.npz, length_sheet.png")
+    print(f"gradient order {order}. {known.mean():.0%} of the sheet has a length. wrote cars/{key}/length.npz, length_sheet.png")
 
 
 def length(key):

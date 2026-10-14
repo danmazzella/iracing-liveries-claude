@@ -359,7 +359,8 @@ Every template has a hidden **`Car Patterns`** group (`car_pattern_000` .. `024`
 (red / green / blue = paint colours 1 / 2 / 3). iRacing's artists drew them on the 3D car, so **their stripes already line up
 across every seam**. `tools/patterns.py sheet <car>` puts them all on one image (`cars/<car>/patterns_sheet.png`).
 
-**`car_pattern_010` is a smooth red -> green -> blue gradient from nose to tail** (all 11 templates we have). Its colour says
+**`car_pattern_010` is a smooth red -> green -> blue gradient from nose to tail** (all 11 templates we have; the Ferrari 296 runs
+red -> magenta -> blue -> cyan -> green instead, and `patterns.py` detects which). Its colour says
 how far along the car a sheet pixel is: a front-to-rear position map, without screenshots. It covers 25-58 % of the paintable
 area; the very nose and tail are flat red / blue (no reading there).
 - `tools/patterns.py length <car>` decodes it to `cars/<car>/length.npz` (0 = nose end, 1 = tail end, NaN where unknown) and
@@ -378,6 +379,8 @@ area; the very nose and tail are flat red / blue (no reading there).
   gradient covers, with no seam map at all.
 - Porsche GT3 R (2026-10-14): gradient covers 35 % (hood, fenders, sides + roof, banner; not the bumpers, deck or wing). Hood /
   fender readings confirmed within 0.05 segment. Coverage and usefulness differ per car: run `length` and look before planning.
+- Ferrari 296 (2026-10-14): gradient in the other colour order (red -> blue -> green); covers 32 % (hood, fenders, sides,
+  roof, engine-cover edges; not the bumpers or wing). No seam readings to check it against yet.
 - **Stripe edges across a 3D vent** (`tools/patterns.py vent <car> <fender> <door> y0-y1`): the other patterns' stripe edges
   where they meet the fender's rear edge and the door's front edge give an offset per height. Tested against two vents tuned
   in-sim: Porsche GT3 R mid/lower vent +37..+42 vs in-sim ~35-45 (good); **BMW lower fender X +40..+50 vs in-sim 74 (26 px off)**,
