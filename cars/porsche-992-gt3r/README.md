@@ -16,6 +16,17 @@ Layers: `Wire` (hidden), `Mask`, `Car_decal`, `IMSA Car_decal` (hidden), `Color 
 (`seam_*.webp`): front and roof/banner seams in `seams.json`, stripe test `seamcheck.tga` built (flat sheet clean, in-sim check
 pending). Rear seams not read yet (list below).
 
+2026-10-14: iRacing's hidden `Car Patterns` (LIVERY_GUIDE 4c) decoded: `patterns_sheet.png`, `length.npz` / `length_sheet.png`
+(35 % of the sheet: hood C, fenders G/H, sides + roof A, banner L 0.40; NOT the lower bumper E, rear deck F, rear bumper D,
+wing). Use `patterns.length("porsche-992-gt3r")` for anything that changes nose -> tail (fades, colour splits) on those panels.
+- Hood side / fender (C19-C24 vs G26.9-G21.9): equal length lands within 0.05 segment of our readings (C15-C18 sit on the flat
+  nose end: no reading there). Confirms that seam.
+- No other lengthwise seam to fill: roof, sides and sills are one island (A), and the rear deck / quarter seams are off the
+  gradient or run across the car. Rear seams still need the in-sim ruler.
+- Fender -> door across the vent from the other patterns' stripe edges (`patterns.py vent porsche-992-gt3r G A 1580-1900 650-800
+  780-950`): d = +37 (fender y 1720-1759), +40 (1760-1799), +42 (1800-1850), many patterns agreeing within a few px. Matches the
+  in-sim-tuned socal curve there (~35-45). Above y 1720 the patterns disagree (20-80): keep the ruler value (70 at y 1610).
+
 ## Sheet map (first numbers, from the template; in-sim check pending)
 
 **Mirror line y ~ 1299.5** (mask reflection test, best overlap 0.90; the door number blocks at y 770-841 / 1761-1831 centre on

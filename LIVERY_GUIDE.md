@@ -376,8 +376,17 @@ area; the very nose and tail are flat red / blue (no reading there).
 - Use: fill in lengthwise seams before a ruler round, and in liveries draw anything that changes front-to-rear (fades, colour
   splits "at the B-pillar", bands across the car) as a function of `patterns.length(key)`: it lines up on every panel the
   gradient covers, with no seam map at all.
-- Not used yet: the other patterns' stripe edges (more seam matches, also across the car) and any pattern that might give
-  height on the sides (`car_pattern_015` has banded sides on the BMW).
+- Porsche GT3 R (2026-10-14): gradient covers 35 % (hood, fenders, sides + roof, banner; not the bumpers, deck or wing). Hood /
+  fender readings confirmed within 0.05 segment. Coverage and usefulness differ per car: run `length` and look before planning.
+- **Stripe edges across a 3D vent** (`tools/patterns.py vent <car> <fender> <door> y0-y1`): the other patterns' stripe edges
+  where they meet the fender's rear edge and the door's front edge give an offset per height. Tested against two vents tuned
+  in-sim: Porsche GT3 R mid/lower vent +37..+42 vs in-sim ~35-45 (good); **BMW lower fender X +40..+50 vs in-sim 74 (26 px off)**,
+  with the patterns agreeing among themselves. Likely cause: the pattern stripes slope, and over the vent's real 3D width (which
+  the sheet leaves out) a sloped stripe drops further than a level band. So it is only right for graphics with the patterns'
+  slope. **Use it as a first guess; confirm level bands with the vent ruler** (section 4b). Near the top of a shut line the
+  patterns often disagree (Porsche: 20-80): ignore those rows.
+- Not used yet: stripe edges for seams across the car (hood / bumper, deck / bumper), where the gradient gives no position.
+  Same slope caveat doesn't apply there (panels touch, no gap).
 
 **Mapping paints install with a flat matte spec** (`install_paint.ps1 -Grid / -Seams / -SeamCheck`, from 2026-10-14):
 metallic 0, roughness 255, alpha 0, so garage lighting doesn't put glare and reflections over the labels. Before, they went in

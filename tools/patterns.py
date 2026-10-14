@@ -10,6 +10,8 @@ blue gradient from nose to tail: its hue tells how far along the car a sheet pix
     ../../.venv/bin/python ../../tools/patterns.py length <car>           decode the gradient
     ../../.venv/bin/python ../../tools/patterns.py match <car> D23-D28 B60-B72
                                                    suggest seams.json pairs from equal length
+    ../../.venv/bin/python ../../tools/patterns.py vent <car> G A 1580-1960 [front x0-x1] [rear x0-x1]
+                                                   offset across a 3D vent (fender G -> door A)
 
 `sheet`  -> cars/<car>/patterns_sheet.png: the 25 patterns, labelled (which shapes iRacing treats
             as continuous over the car).
@@ -21,6 +23,10 @@ blue gradient from nose to tail: its hue tells how far along the car a sheet pix
             match there only says "same row", not where along the seam. Flags such points.
             Give both ranges roughly (from the grid or the ruler screenshot); check the result
             with seams.py check like any reading.
+`vent`   -> the other patterns' stripe edges where they meet the facing edges of two panels across a
+            3D vent/gap (front panel's rear edge, rear panel's front edge, rows y0..y1): the same stripe
+            at front y and rear y + d gives d per height (LIVERY_GUIDE 4c). Optional x ranges pick
+            which edge of a panel to sample when it has several in those rows.
 
     import patterns; L = patterns.length("bmw-m4-gt3")   # 2048x2048, NaN off the gradient
 """
@@ -168,6 +174,83 @@ def match(key, ra, rb):
     return pairs
 
 
+def _edge_samples(car, code, other, y0, y1, xr=None, inset=6):
+    """Per sheet row y0..y1: the pixel of panel `code` (inset px inside) nearest to panel `other`
+    along x (front fender -> its rear edge, door -> its front edge)."""
+    m = ndimage.binary_erosion(car.mask(code), iterations=inset)
+    toward = np.sign(np.nonzero(car.mask(other))[1].mean() - np.nonzero(car.mask(code))[1].mean())
+    lo, hi = xr if xr else (0, SIZE)
+    out = {}
+    for y in range(max(0, y0), min(SIZE, y1)):
+        xs = np.nonzero(m[y, lo:hi])[0]
+        if len(xs):
+            out[y] = lo + (xs.max() if toward > 0 else xs.min())
+    return out
+
+
+def _transitions(im, edge, min_run=3):
+    """Colour changes along an edge: [(y, from, to)], colour = dominant channel (3 = dark).
+    Runs shorter than min_run px (anti-aliasing, hairlines) are dropped."""
+    ys = sorted(edge)
+    c = [int(np.argmax(im[y, edge[y]])) if im[y, edge[y]].max() > 100 else 3 for y in ys]
+    runs = []   # [colour, first y, last y]
+    for y, k in zip(ys, c):
+        if runs and runs[-1][0] == k and y - runs[-1][2] <= 2:
+            runs[-1][2] = y
+        else:
+            runs.append([k, y, y])
+    runs = [r for r in runs if r[2] - r[1] + 1 >= min_run]
+    return [(b[1], a[0], b[0]) for a, b in zip(runs, runs[1:]) if a[0] != b[0] and b[1] - a[2] <= 4]
+
+
+def vent(key, front, rear, y0, y1, dmax=150, tol=3, xr_front=None, xr_rear=None):
+    """Offset across a 3D vent / gap between two panels that face each other along x (front
+    fender -> door), from iRacing's patterns: their stripes were drawn on the 3D car, so the same
+    stripe edge sits at y on the front panel and y + d on the rear panel. Returns sorted
+    [(front sheet y, d)]: the d to use in seams.json "shifts" / a livery's fender curve."""
+    car, psd = seams.Car(key), _psd(key)
+    fe = _edge_samples(car, front, rear, y0, y1, xr_front)
+    re_ = _edge_samples(car, rear, front, y0 - 50, y1 + dmax, xr_rear)
+    grp = next((l for l in psd.descendants() if l.name == "Car Patterns"), None)
+    if grp is None:
+        sys.exit("no Car Patterns group in this template")
+    found = []
+    for lyr in sorted(grp, key=lambda l: l.name):
+        if lyr.name in ("car_pattern_001.tga", GRADIENT):   # sample livery photo, smooth gradient
+            continue
+        full = Image.new("RGB", (SIZE, SIZE))
+        full.paste(lyr.topil().convert("RGB"), (lyr.left, lyr.top))
+        im = np.asarray(full)
+        tf, tr = _transitions(im, fe), _transitions(im, re_)
+        if len(tf) < 2 or not tr:
+            continue
+        # one shift per pattern: the d that lines up the most stripe edges (same colours on both sides)
+        best = (0, None)
+        for d in range(-dmax, dmax + 1):
+            hits = sum(any(abs(r[0] - f[0] - d) <= tol and r[1:] == f[1:] for r in tr) for f in tf)
+            if hits > best[0]:
+                best = (hits, d)
+        if best[0] < 2:
+            continue
+        # then each edge's own offset near that shift (the offset may change with height)
+        for f in tf:
+            near = [r[0] - f[0] for r in tr if r[1:] == f[1:] and abs(r[0] - f[0] - best[1]) <= 3 * tol + 6]
+            if near:
+                d = min(near, key=lambda v: abs(v - best[1]))
+                found.append((f[0], d, lyr.name[12:15]))
+    found.sort()
+    for y, d, n in found:
+        print(f"  front y {y}  ->  rear y {y + d}   d = {d:+d}   (pattern {n})")
+    if found:
+        ys, ds = np.array([f[0] for f in found]), np.array([f[1] for f in found])
+        print("\nmedian d per 40 px of front-panel y:")
+        for b in range(y0 - y0 % 40, y1, 40):
+            sel = (ys >= b) & (ys < b + 40)
+            if sel.any():
+                print(f"  y {b}-{b + 39}: d = {np.median(ds[sel]):+.0f}  ({sel.sum()} edges, spread {np.ptp(ds[sel])})")
+    return found
+
+
 if __name__ == "__main__":
     args = sys.argv[1:]
     if len(args) < 2:
@@ -179,5 +262,9 @@ if __name__ == "__main__":
         build_length(key)
     elif cmd == "match" and len(args) == 4:
         match(key, args[2], args[3])
+    elif cmd == "vent" and len(args) >= 5:
+        y0, y1 = map(int, args[4].split("-"))
+        xr = [tuple(map(int, a.split("-"))) if a != "-" else None for a in args[5:7]] + [None, None]
+        vent(key, args[2], args[3], y0, y1, xr_front=xr[0], xr_rear=xr[1])
     else:
         sys.exit(__doc__)
