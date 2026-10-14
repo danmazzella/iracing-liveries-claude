@@ -1,0 +1,53 @@
+Attach these 4 images first: guide_atlas.png, guide_legend.png, guide_wire.png, concept_gofast.webp
+(new Gemini chat for every message). Then paste everything below the line.
+------------------------------
+This image is a flat 2048x2048 UV paint sheet for a race car (bmw-m4-gt3), not a picture of a car.
+Every coloured region is a body panel (image 2 names each colour). Dark grey areas are not paintable
+(leave them dark grey). Redraw the sheet as the finished livery artwork:
+
+DESIGN: PATTERN ONLY. GoFAST Racing BMW M4 GT3, "Updated livery concept v2: same identity, more detail, more impact". Palette: navy #1E2744, vivid orange #FF7300 (league orange #E36400), white / light grey. Flat vector vinyl style, bold shapes, no gradients, no glow. Cover every coloured panel with a white and light-grey hexagon (honeycomb)
+mosaic, tiles slightly greyer toward the rear. NO slashes, NO logos, NO mascots, NO orange or navy. Keep the dark grey
+areas dark grey and the number rectangles plain white.
+
+Rules:
+- Same size, same layout: every panel stays exactly where it is, edges do not move.
+- Paint inside each coloured region only; fill it edge to edge with artwork, no labels, no outlines.
+- Flat 2D artwork as it would print on vinyl: no 3D rendering, no lighting, shadows or reflections.
+- Solid flat colours with crisp edges. No gradients, glows, blurs, soft shading or smudged blends,
+  and no colour bleeding across panel edges. Navy and orange stay saturated; whites stay clean white.
+- The sheet is mirrored about the horizontal centre of the sheet (front of the car at the LEFT). The lower
+  half is the car's left side, the upper half its right side (upside down). Make the upper half
+  a vertical mirror image of the lower half, except text/logos (those must read correctly).
+- Plain white rectangles with a thin grey outline are where the car number plate goes: leave them
+  plain white, no outline, and keep every logo, text and mascot completely outside them (at least
+  a box-width away). Put wide logos on the long open stretch of the side panel, well behind or in
+  front of the number plate, never starting next to it.
+- The wing (E) is a normal panel: paint it with bold flat colour or stripes, never grey.
+- The output must contain NO text from this brief: no panel names, no "NUMBER", no title line, no
+  dashed centre line, no legend.
+- No car numbers, no sponsor boxes, no small text.
+- If a fourth image is attached it is a 3D concept render of the finished car: copy its colours, shapes and
+  style only, never its perspective, and never draw anything but the flat sheet layout.
+- Keep graphics bold and simple: they are seen from a distance on a curved car.
+
+Regions:
+- **A**: LEFT SIDE: door, fender, rear quarter (upright)
+- **B**: RIGHT SIDE: door, fender, rear quarter (upside down, mirror of A)
+- **C**: HOOD (nose at left edge)
+- **D**: ROOF
+- **E**: REAR WING top surface
+- **F**: FRONT BUMPER (x = height, y = across the car)
+- **K**: WINDSHIELD BANNER strip
+- **J**: REAR WINDOW / TRUNK
+- **M**: right front fender top (mirror of N)
+- **N**: left front fender top (mirror of M)
+- **L**: rear bumper part (unverified)
+- **R**: rear bumper part (unverified)
+- **W**: rear bumper / trunk part (unverified)
+
+Keep clear of (3D parts cover paint here):
+- kidney grille: dark rounded rects at x 955-1215, y 1580-1690 (NOT windows)
+- front fender louvers x 1195-1500, y 1558-1700 (left), y 951-1035 (right)
+- tail light about x 1730-1850, y 1540-1700 (left): covers paint
+- hood vents x 380-530, y 1400-1520
+- car number blocks: leave plain, iRacing draws the number

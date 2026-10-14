@@ -13,7 +13,9 @@ Template: `psd/Ford Mustang GT3.psd`. Layers: `Wire` (hidden), `Mask`, `Car mand
 
 Part map first pass 2026-10-01 from 12 in-sim grid shots (`grid_*.webp`; the grid itself is `grid.tga`, flat view `grid_preview.png`).
 Read at screenshot scale: body panels, wing, hood, roof are solid; bumpers, fender details and small islands are
-**approximate** (marked `~`) and need close-ups. Seams NOT mapped (`tools/seams.py ruler ford-mustang-gt3` needs the car added first).
+**approximate** (marked `~`) and need close-ups. Seam ruler made 2026-10-13 (`seams.tga`, 68 panels, `islands.npz`; 14 in-sim shots `seam_*.webp`). Read so far:
+hood front edge C <-> lip strip Y above the grille (`seams.json`). Ruler codes: C hood, Y lip strip, N grille surround,
+E front bumper face, M windshield banner.
 Cell = `col.row`, col = x/64, row = y/64.
 
 ## Sheet map
@@ -55,10 +57,17 @@ right-side panels upside down. Hood, roof and rear deck straddle the line: desig
 
 ## Proven placements
 
-None yet.
+- Number card: iRacing's block is x 967-1062, y 1564-1633 (left door) / y 415-484 (right). A card ~133 x 133 around it
+  shows the header and footer (GFR v6 in-sim).
 
 ## Gotchas
 
+- The hood scoop walls around the extractor openings (x ~480-600, y ~1110-1270 left; mirrored right) are marked
+  unpaintable in the Mask but show in-sim: paint into the openings too (GFR v13/v14).
+- The Mask is a little tight just ahead of the tail lights: bleed paint ~40 px past it (GFR v9).
+
+- The door panel ends at x ~1400 (rows 24-26 left, 6-7 right): a notch for the door shut line / dark slot behind the
+  door. Door lettering past it gets cut off in-sim (GFR v6). Keep door text between the number card and x ~1385.
 - Grid label format on the car is `col.row` (e.g. `17.24`), comma-like in places.
 - The visible side in a shot with the nose on the left is the car's LEFT side (rows 21-27, upright text).
 - The sheet has no centre-line on the bumper: it is cut into corner islands, so mirror it by row (31-r) rather than around y 1023.
@@ -66,4 +75,4 @@ None yet.
 ## Next
 
 1. Close-ups to pin down the `~` rows: front bumper from the front, front fender/wheel arch (both sides), mirrors, rear bumper.
-2. `tools/seams.py ruler ford-mustang-gt3` + read hood/bumper, fender/door, roof/pillars seams before any graphic crosses them.
+2. Read more seams off the existing `seam_*.webp` shots as designs need them (fender/door, roof/pillars, Y/E bumper).

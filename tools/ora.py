@@ -35,6 +35,31 @@ class Layer:
     image: Image.Image           # RGBA, same size as the canvas (2048x2048 for iRacing)
     visible: bool = True
     opacity: float = 1.0
+    group: tuple = ()            # group path, outermost first, e.g. ("Paintable Area", "Top")
+
+
+def _stack_xml(layers, hidden_groups):
+    """Nested <stack> elements; consecutive layers sharing a group prefix go in one group."""
+    def emit(items, depth):
+        out, i = [], len(items) - 1
+        while i >= 0:                               # stack.xml lists the topmost first
+            idx, l = items[i]
+            if len(l.group) > depth:
+                g = l.group[:depth + 1]
+                j = i
+                while j - 1 >= 0 and items[j - 1][1].group[:depth + 1] == g:
+                    j -= 1
+                vis = "hidden" if g in hidden_groups else "visible"
+                out.append(f'<stack name={quoteattr(g[-1])} visibility="{vis}">')
+                out += emit(items[j:i + 1], depth + 1)
+                out.append("</stack>")
+                i = j - 1
+            else:
+                out.append(f'<layer name={quoteattr(l.name)} src="data/layer{idx:02d}.png" x="0" y="0" '
+                           f'opacity="{l.opacity:.3f}" visibility="{"visible" if l.visible else "hidden"}"/>')
+                i -= 1
+        return out
+    return emit(list(enumerate(layers)), 0)
 
 
 def _png(im):
@@ -43,25 +68,23 @@ def _png(im):
     return buf.getvalue()
 
 
-def write(path, layers, size=None):
+def write(path, layers, size=None, hidden_groups=()):
     """Write `layers` (bottom -> top) to `path` as OpenRaster. Hidden layers stay out of the
-    merged preview but are kept in the file."""
-    layers = [Layer(l.name, l.image.convert("RGBA"), l.visible, l.opacity) for l in layers]
+    merged preview but are kept in the file. Layers with a `group` path are nested in groups
+    (consecutive layers with the same path share one group); `hidden_groups` = group paths to hide."""
+    layers = [Layer(l.name, l.image.convert("RGBA"), l.visible, l.opacity, tuple(l.group)) for l in layers]
+    hidden_groups = {tuple(g) for g in hidden_groups}
     w, h = size or layers[0].image.size
     merged = Image.new("RGBA", (w, h))
     for l in layers:
-        if l.visible:
+        if l.visible and not any(l.group[:k] in hidden_groups for k in range(1, len(l.group) + 1)):
             im = l.image
             if l.opacity < 1:
                 im = im.copy()
                 im.putalpha(im.getchannel("A").point(lambda a: round(a * l.opacity)))
             merged.alpha_composite(im)
 
-    # stack.xml lists the topmost layer first
-    rows = []
-    for i, l in reversed(list(enumerate(layers))):
-        rows.append(f'  <layer name={quoteattr(l.name)} src="data/layer{i:02d}.png" x="0" y="0" '
-                    f'opacity="{l.opacity:.3f}" visibility="{"visible" if l.visible else "hidden"}"/>')
+    rows = _stack_xml(layers, hidden_groups)
     stack = ('<?xml version="1.0" encoding="UTF-8"?>\n'
              f'<image version="0.0.5" w="{w}" h="{h}">\n<stack>\n' + "\n".join(rows) + "\n</stack>\n</image>\n")
 

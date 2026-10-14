@@ -10,7 +10,7 @@ param(
     [string]$Variant = "",     # colourway subfolder of final\ when a car has more than one
     [string]$Finish = "gloss",   # any spec_<name>.tga the build / final has
     [string]$CustomerId = "",  # remembered after the first use
-    [switch]$Grid,             # install cars\<car>\grid.tga (mapping grid, no spec)
+    [switch]$Grid,             # install cars\<car>\grid.tga (mapping grid, with a flat matte spec)
     [switch]$Seams,            # install cars\<car>\seams.tga (seam ruler, tools\seams.py)
     [switch]$SeamCheck,        # install cars\<car>\seamcheck.tga (seam stripe test)
     [string]$File = "",        # install this paint file instead (any path)
@@ -45,6 +45,23 @@ function Get-Builds([string]$proj, [string]$car) {
     } | Sort-Object LastWriteTime -Descending
 }
 
+function Write-MatteSpec([string]$path) {
+    # 2048x2048 32-bit TGA, every pixel metallic 0 / roughness 255 / clearcoat 0 / alpha 0:
+    # roughness 255 = flat chalky matte, alpha 0 = no environment reflections (LIVERY_GUIDE 5)
+    $n = 2048
+    $header = [byte[]](0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 8, 0, 8, 32, 8)
+    $px = [byte[]]::new($n * $n * 4)
+    for ($i = 1; $i -lt $n * 4; $i += 4) { $px[$i] = 255 }      # one row, BGRA: G = 255
+    $done = $n * 4
+    while ($done -lt $px.Length) {                              # copy it down, doubling each time
+        $len = [Math]::Min($done, $px.Length - $done)
+        [Array]::Copy($px, 0, $px, $done, $len)
+        $done += $len
+    }
+    $f = [IO.File]::Create($path)
+    try { $f.Write($header, 0, $header.Length); $f.Write($px, 0, $px.Length) } finally { $f.Close() }
+}
+
 function Show-Help {
     $cars = Get-Cars
     $projects = Get-ChildItem $Liveries -Directory -ErrorAction SilentlyContinue | Where-Object { Get-ChildItem $_.FullName -Directory | Where-Object { Test-Path (Join-Path $_.FullName "out") } } |
@@ -72,7 +89,8 @@ OPTIONS
   -Finish      which spec file: gloss = the default (_spec.tga / spec.tga), anything else = the alternate
                (_spec_<name>.tga / spec_<name>.tga, e.g. metal, chrome, gold). -List shows each build's finishes
   -CustomerId  your iRacing customer ID (iRacing account page). Remembered after the first time.
-  -Grid        install cars\<car>\grid.tga, the labelled grid for mapping a car
+  -Grid        install cars\<car>\grid.tga, the labelled grid for mapping a car.
+               -Grid, -Seams and -SeamCheck install a flat matte spec with it (no glare on the labels)
   -Seams       install cars\<car>\seams.tga, the seam ruler (tools\seams.py ruler <car>)
   -SeamCheck   install cars\<car>\seamcheck.tga, the seam stripe test (tools\seams.py check <car>)
   -File        install any paint .tga (optional -SpecFile for its spec)
@@ -138,7 +156,9 @@ if (-not (Test-Path $dest)) {
 
 # --- which files
 $spec = $null
+$matte = $false
 if ($Grid -or $Seams -or $SeamCheck) {
+    $matte = $true   # mapping paints get a flat matte spec: no gloss or reflections over the labels
     $name = if ($Grid) { "grid" } elseif ($Seams) { "seams" } else { "seamcheck" }
     $paint = Join-Path $Repo "cars\$Car\$name.tga"
     if (-not (Test-Path $paint)) {
@@ -197,6 +217,9 @@ $specTga = Join-Path $dest "car_spec_$CustomerId.tga"
 if ($spec) {
     Copy-Item $spec $specTga -Force
     Write-Host "spec  -> $specTga   (from $spec)"
+} elseif ($matte) {
+    Write-MatteSpec $specTga
+    Write-Host "spec  -> $specTga   (flat matte, so lighting doesn't wash out the labels)"
 } elseif (Test-Path $specTga) {
     Remove-Item $specTga   # don't leave an old finish on the new paint
     Write-Host "spec  -> removed the old one"

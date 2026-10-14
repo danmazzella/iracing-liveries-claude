@@ -1,0 +1,7 @@
+{"mirror_y": 1023,
+ "seams": [
+  {"name": "hood front edge / lip strip above the grille (seam_front_zoom.webp, 2026-10-13)",
+   "note": "Y labels are upside down on this edge (its segments run right to left on screen); read at the tick bases",
+   "pairs": [["C9", "Y17.76"], ["C10", "Y16.71"], ["C11", "Y15.56"], ["C12", "Y14.56"],
+             ["C14", "Y12.42"], ["C15", "Y11.32"], ["C16", "Y10.26"]]}
+ ]}

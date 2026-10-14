@@ -1,0 +1,162 @@
+{
+ "mirror_y": 1299.5,
+ "seams": [
+  {
+   "name": "hood nose / lower front bumper (seam_front*.webp, 2026-10-13)",
+   "note": "E labels upside down here (segments run right to left on screen); crest sits on the C11/C12 tick",
+   "pairs": [
+    [
+     "C10",
+     "E34.35"
+    ],
+    [
+     "C11",
+     "E33.36"
+    ],
+    [
+     "C12",
+     "E32.42"
+    ],
+    [
+     "C13",
+     "E31.5"
+    ],
+    [
+     "C14",
+     "E30.55"
+    ]
+   ]
+  },
+  {
+   "name": "right front fender / lower front bumper (seam_front*.webp) + outer end to the slot by the wheel (seam_front34_right.webp)",
+   "pairs": [
+    [
+     "H10",
+     "E39.57"
+    ],
+    [
+     "H11",
+     "E38.62"
+    ],
+    [
+     "H12",
+     "E37.76"
+    ],
+    [
+     "H13",
+     "E36.7"
+    ]
+   ],
+   "note": "H9/E40.45 (at the slot by the wheel, where the edge turns) left out: it made the fender stretch 8:1"
+  },
+  {
+   "name": "left front fender / lower front bumper (seam_front*.webp)",
+   "pairs": [
+    [
+     "G1",
+     "E28.55"
+    ],
+    [
+     "G2",
+     "E27.64"
+    ],
+    [
+     "G3",
+     "E26.8"
+    ]
+   ]
+  },
+  {
+   "name": "hood side / left front fender (touching on the sheet; seen in seam_front*.webp)",
+   "pairs": [
+    [
+     "C15",
+     "G30.91"
+    ],
+    [
+     "C16",
+     "G29.89"
+    ],
+    [
+     "C17",
+     "G28.89"
+    ],
+    [
+     "C18",
+     "G27.89"
+    ],
+    [
+     "C19",
+     "G26.89"
+    ],
+    [
+     "C20",
+     "G25.89"
+    ],
+    [
+     "C21",
+     "G24.89"
+    ],
+    [
+     "C22",
+     "G23.89"
+    ],
+    [
+     "C23",
+     "G22.89"
+    ],
+    [
+     "C24",
+     "G21.88"
+    ]
+   ]
+  },
+  {
+   "name": "roof front edge / windshield banner (seam_top_front.webp)",
+   "pairs": [
+    [
+     "A41",
+     "L14.97"
+    ],
+    [
+     "A42",
+     "L14.07"
+    ],
+    [
+     "A43",
+     "L13.1"
+    ],
+    [
+     "A44",
+     "L12.13"
+    ],
+    [
+     "A45",
+     "L11.17"
+    ],
+    [
+     "A46",
+     "L10.14"
+    ]
+   ]
+  },
+  {
+   "name": "right front fender rear edge / door front edge, ACROSS the vent (seam_side_right.webp; grid_side_right.webp confirms ~0.8 row offset)",
+   "note": "from the grid (grid_side_right.webp): across the vent the door is 48 sheet px lower than the fender at every height, scale 1; ruler readings H37/A5.52, H36/A6.67 were off",
+   "pairs": [
+    [
+     "H38",
+     "A4.85"
+    ],
+    [
+     "H37",
+     "A6.13"
+    ],
+    [
+     "H36",
+     "A6.95"
+    ]
+   ]
+  }
+ ]
+}

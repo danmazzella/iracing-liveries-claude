@@ -1,0 +1,31 @@
+{
+  "mirror_y": 1311.5,
+  "front": "left",
+  "mask": "Mask",
+  "trim": "Carbon Fiber",
+  "top": "Car_decal",
+  "over_trim": ["E"],
+  "numbers": "Number Blocks",
+  "regions": {
+    "A": "LEFT SIDE: door, fender, rear quarter (upright)",
+    "B": "RIGHT SIDE: door, fender, rear quarter (upside down, mirror of A)",
+    "C": "HOOD (nose at left edge)",
+    "D": "ROOF",
+    "E": "REAR WING top surface",
+    "F": "FRONT BUMPER (x = height, y = across the car)",
+    "K": "WINDSHIELD BANNER strip",
+    "J": "REAR WINDOW / TRUNK",
+    "M": "right front fender top (mirror of N)",
+    "N": "left front fender top (mirror of M)",
+    "L": "rear bumper part (unverified)",
+    "R": "rear bumper part (unverified)",
+    "W": "rear bumper / trunk part (unverified)"
+  },
+  "avoid": [
+    "kidney grille: dark rounded rects at x 955-1215, y 1580-1690 (NOT windows)",
+    "front fender louvers x 1195-1500, y 1558-1700 (left), y 951-1035 (right)",
+    "tail light about x 1730-1850, y 1540-1700 (left): covers paint",
+    "hood vents x 380-530, y 1400-1520",
+    "car number blocks: leave plain, iRacing draws the number"
+  ]
+}

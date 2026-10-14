@@ -23,7 +23,13 @@ joined, so anything drawn across a seam continues on the other panel automatical
    ~150 px on curved or long seams. Write them to cars/<car>/seams.json:
        {"mirror_y": 1311.5,
         "seams": [{"name": "hood / front bumper", "pairs": [["H12", "B40.5"], ["H15", "B37"]]}]}
+   Panels that don't touch but should carry a graphic over a gap (a 3D vent between fender and
+   door): read the rulers across it at equal height and add "gap": true to that seam (positions
+   are joined, the stripe angle is left free so the panels don't bend toward each other).
    With mirror_y set, a seam read on one side is copied to the mirrored panels automatically.
+   A gap whose offset was measured with a vent ruler (constant-y bands: no rotation) goes in
+   "shifts" instead: {"panels": ["X"], "onto": "A", "dy": [[1721, 74], [1900, 74]]} = X shows
+   A's design 74 px further down the sheet (a short gap seam can't place a whole panel).
 3. `check` unfolds every panel joined by a seam and paints continuous diagonal stripes across
    them (cars/<car>/seamcheck.tga). One in-sim look: stripes crossing a seam without a step
    or kink = that seam is right.
@@ -34,6 +40,7 @@ In a livery:
     u = car.unfold("H")                      # root panel; everything seamed to it gets attached
     X, Y, on = u.field()                     # design coords of every sheet pixel on those panels
     sheet_rgba = u.pull(design_rgba)         # or draw on a design canvas and pull it onto the sheet
+    right = car.flip(left_rgba)              # mirror a left-side layer (fixes twins off the reflection)
 Design space = the root panel's own sheet coords, with the other panels warped to sit against
 it along their seams. So draw on the hood as usual and a stripe that runs off its front edge
 lands on the bumper exactly where the hood's edge meets it.
@@ -321,7 +328,9 @@ class Car:
         p = os.path.join(car_dir(key), "seams.json")
         self.cfg = json.load(open(p)) if os.path.exists(p) else {"seams": []}
         self.mirror_y = self.cfg.get("mirror_y")
+        self.loose = set()     # panel pairs read across a gap (3D vent): positions pinned, angles not
         self.seams = self._merge(self._resolve())
+        self.shifts = self._shifts()
 
     # -- panels
     def mask(self, code, grow=0):
@@ -387,6 +396,8 @@ class Car:
                 B.extend(_resample(sb, k))
             A, B = np.array(A), np.array(B)
             out.append((pa, pb, A, B, s.get("name", f"{pa}/{pb}")))
+            if s.get("gap"):
+                self.loose.add(frozenset((pa, pb)))
             if self.mirror_y is not None:
                 mA, mB = A.copy(), B.copy()
                 mA[:, 1] = 2 * self.mirror_y - mA[:, 1]
@@ -401,6 +412,90 @@ class Car:
                             out[-1] = (pa, pb, np.vstack([A, mA[new]]), np.vstack([B, mB[new]]), out[-1][4])
                     else:
                         out.append((qa, qb, mA, mB, s.get("name", "") + " (mirrored)"))
+                        if s.get("gap"):
+                            self.loose.add(frozenset((qa, qb)))
+        return out
+
+    def twin(self, code):
+        """(other, dx, dy): the panel `code` mirrors onto and how far it sits off the exact
+        reflection about mirror_y: pixel (x, y) of `code` <-> (x + dx, 2*mirror_y - y + dy) of
+        `other`. Best overlap over dy -40..40, dx -12..12; None if nothing overlaps well. Most
+        twins sit within a few px; the BMW right front fender side (Y) is 27 px off its left twin X."""
+        cache = self.__dict__.setdefault("_twin", {})
+        if code not in cache:
+            ys, xs = np.nonzero(self.mask(code))
+            ys, xs = ys[::5], xs[::5]
+            m2, best = 2 * self.mirror_y, None
+            for dx in range(-12, 13, 2):
+                for dy in range(-40, 41):
+                    ry, rx = np.round(m2 - ys + dy).astype(int), xs + dx
+                    ok = (ry >= 0) & (ry < SIZE) & (rx >= 0) & (rx < SIZE)
+                    hit = self.labels[ry[ok], rx[ok]]
+                    hit = hit[hit > 0]
+                    if not len(hit):
+                        continue
+                    lab = np.bincount(hit).argmax()
+                    inter = (hit == lab).sum() * 5
+                    other = self.code_of[int(lab)]
+                    iou = inter / (len(ys) * 5 + self.panels[other]["area"] - inter)
+                    if best is None or iou > best[0]:
+                        best = (iou, other, dx, dy)
+            cache[code] = best[1:] if best and best[0] > 0.8 else None
+        return cache[code]
+
+    def flip(self, rgba, tol=6, bleed=24):
+        """Mirror a design layer (HxWx4) about mirror_y, panel by panel: a plain flip, except that
+        panels whose twin sits more than `tol` px off the exact reflection are resampled from
+        their twin at the measured offset (a plain flip put the BMW right fender art 27 px off,
+        with an unpainted strip along one edge). Bleeds `bleed` px past those panels' edges."""
+        m2 = 2 * self.mirror_y
+        src = np.round(m2 - np.arange(SIZE)).astype(int)
+        out = np.zeros_like(rgba)
+        ok = (src >= 0) & (src < SIZE)
+        out[ok] = rgba[src[ok]]
+        f = rgba.astype(np.float32)
+        al = f[..., 3] / 255
+        for c, v in self.panels.items():
+            t = self.twin(c) if v["area"] >= MIN_AREA else None
+            if not t or t[0] == c or max(abs(t[1]), abs(t[2])) <= tol:
+                continue
+            # pixels of c's twin take c's design: twin (x, y) <- c (x - dx, m2 - y + dy)
+            other, dx, dy = t
+            own = self.mask(other)
+            reach = ndimage.binary_dilation(own, iterations=bleed) & ~((self.labels != 0) & ~own)
+            ys, xs = np.nonzero(reach)
+            gx, gy = (xs - dx).astype(np.float32), (m2 - ys + dy).astype(np.float32)
+            A = ndimage.map_coordinates(al, [gy, gx], order=1, mode="constant")
+            for k in range(3):                     # premultiplied: no dark fringes on the edges
+                val = ndimage.map_coordinates(f[..., k] * al, [gy, gx], order=1, mode="constant")
+                out[ys, xs, k] = np.clip(val / np.maximum(A, 1e-4), 0, 255)
+            out[ys, xs, 3] = np.clip(A * 255, 0, 255)
+        return out
+
+    def _shifts(self):
+        """seams.json "shifts": panels across a 3D gap that copy a neighbour's design at a measured
+        sheet offset (vent ruler: "the door sits 74 px lower than the fender at the same height").
+            {"panels": ["X", "N"], "onto": "A", "dy": [[1600, 106], [1712, 78], [1900, 74]]}
+        = pixel (x, y) on X or N shows the design of A at (x, y + dy(y)), dy linear between the
+        given sheet y values, flat outside. Mirrored panels get the reflected rule."""
+        out = []
+        for s in self.cfg.get("shifts", []):
+            ys, ds = map(np.array, zip(*s["dy"]))
+
+            def fn(p, ys=ys, ds=ds):
+                return np.stack([p[:, 0], p[:, 1] + np.interp(p[:, 1], ys, ds)], 1)
+            for c in s["panels"]:
+                out.append((c, s["onto"], fn))
+                if self.mirror_y is None:
+                    continue
+                tc, to = self.twin(c), self.twin(s["onto"])
+                if not (tc and to) or tc[0] == c:
+                    continue
+                # twin pixel -> c (undo c's mirror offset) -> onto -> onto's twin (its offset)
+                def mfn(p, fn=fn, tc=tc, to=to, m2=2 * self.mirror_y):
+                    q = fn(np.stack([p[:, 0] - tc[1], m2 - p[:, 1] + tc[2]], 1))
+                    return np.stack([q[:, 0] + to[1], m2 - q[:, 1] + to[2]], 1)
+                out.append((tc[0], to[0], mfn))
         return out
 
     @staticmethod
@@ -515,6 +610,19 @@ def _normals(pts, mask, inward):
     return out
 
 
+def _similarity_w(src, dst, reflect, w):
+    """Weighted least-squares similarity src -> dst (Umeyama with point weights)."""
+    w = w / w.sum()
+    ms, md = (src * w[:, None]).sum(0), (dst * w[:, None]).sum(0)
+    s0, d0 = src - ms, dst - md
+    U, S, Vt = np.linalg.svd((d0 * w[:, None]).T @ s0)
+    sgn = np.sign(np.linalg.det(U) * np.linalg.det(Vt))
+    D = np.diag([1, -sgn if reflect else sgn])
+    R = U @ D @ Vt
+    sc = (S * np.diag(D)).sum() / (w * (s0 ** 2).sum(1)).sum()
+    return lambda p: (p - ms) @ (sc * R).T + md
+
+
 def _similarity(src, dst, reflect):
     """Least-squares similarity src -> dst (Umeyama), optionally with a reflection."""
     ms, md = src.mean(0), dst.mean(0)
@@ -534,69 +642,159 @@ def _similarity(src, dst, reflect):
 class Unfold:
     """Panels joined along their seams around a root panel.
 
-    Each attached panel gets a smooth warp (thin-plate spline) from its sheet coords into its
-    parent's, pinned to the seam readings along the seam and to the best-fit similarity
-    transform away from it; warps chain to the root. Only seams on the spanning tree are
-    guaranteed continuous: a panel seamed to two others follows the one it was reached by."""
+    Each attached panel gets a smooth warp (thin-plate spline) from its sheet coords straight
+    into design coords (the root's sheet coords), pinned to the seam readings along its seams
+    and to the best-fit similarity transform away from them. Panels are reached along a
+    spanning tree, then refitted to EVERY placed neighbour they share a seam with, so a panel
+    between three others (a bumper under the nose and both fenders) follows all of them, not
+    just the one it was reached by (Porsche GT3 R: the bumper corners followed only the nose
+    and their stripes turned vertical under the headlights). Seams whose readings disagree
+    can still step a little; check in-sim."""
 
     def __init__(self, car, root, only=None):
         self.car, self.root = car, root
         self.parent, self.fit = {root: None}, {}
         g = car.graph()
-        queue = [root]
+        self._g = g
+        order, queue = [], [root]
         while queue:
             p = queue.pop(0)
             for c, cpts, ppts in g.get(p, []):
                 if c in self.parent or (only and c not in only):
                     continue
                 self.parent[c] = p
-                self.fit[c] = self._fit(c, p, cpts, ppts)
+                # every panel already placed that c has readings with (a big panel reached by one
+                # short seam gets its rotation and scale from all of them: GT3 R side via both fenders)
+                nb = [(n, cp, npp) for n, npp, cp in g.get(c, [])
+                      if n == self.root or n in self.fit]
+                self.fit[c] = self._fit(c, nb, p)
+                order.append(c)
                 queue.append(c)
-        self.skipped = [(pa, pb, name) for pa, pb, _, _, name in car.seams
-                        if pa in self.parent and pb in self.parent
-                        and self.parent.get(pa) != pb and self.parent.get(pb) != pa]
+        # second pass: every seam to a placed panel pins the warp
+        for c in order:
+            # placed neighbours, but not the panels hanging off c (they were placed from c's
+            # first fit: refitting c to them goes round in a circle and folded the GT3 R fender)
+            nb = [(n, cpts, npts) for n, npts, cpts in g.get(c, [])
+                  if n in self.parent and not self._below(n, c)]
+            off = max(np.hypot(*(self.to_design(c, cp) - self.to_design(n, npp)).T).max()
+                      for n, cp, npp in nb)
+            if len(nb) > 1 and off > 3:
+                self.fit[c] = self._fit(c, nb, self.parent[c])
+        # panels across a gap that copy a neighbour at a measured offset (only if no seam placed them)
+        for c, onto, dy in car.shifts:
+            if c in self.parent or onto not in self.parent or (only and c not in only):
+                continue
+            self.parent[c] = onto
+            ys, xs = np.nonzero(car.mask(c))
+            y0, y1, x0, x1 = ys.min() - 8, ys.max() + 9, xs.min() - 8, xs.max() + 9
+            cy, cx = np.mgrid[y0:y1 + 4:4, x0:x1 + 4:4].astype(float)
+            q = self._extrapolate(onto, dy(np.stack([cx.ravel(), cy.ravel()], 1))).reshape(cy.shape + (2,))
+            self.fit[c] = (x0, y0, q)
+        self.skipped = []
 
-    def _fit(self, c, p, cpts, ppts):
-        cm, pm = self.car.mask(c), self.car.mask(p, grow=4)
+    def _extrapolate(self, c, pts):
+        """Design coords of sheet points that may lie OFF panel c (a shifted fender maps into the
+        vent in front of the door): from the nearest point 6 px inside c, linearly with the warp's
+        local Jacobian there (to_design alone clamps at the panel's edge and squashes the shape)."""
+        inner = ndimage.binary_erosion(self.car.mask(c), iterations=6)
+        _, idx = ndimage.distance_transform_edt(~inner, return_indices=True)
+        ip = np.clip(np.round(pts).astype(int), 0, SIZE - 1)
+        pin = np.stack([idx[1][ip[:, 1], ip[:, 0]], idx[0][ip[:, 1], ip[:, 0]]], 1).astype(float)
+        d0 = self.to_design(c, pin)
+        jx = (self.to_design(c, pin + [3, 0]) - self.to_design(c, pin - [3, 0])) / 6
+        jy = (self.to_design(c, pin + [0, 3]) - self.to_design(c, pin - [0, 3])) / 6
+        v = pts - pin
+        return d0 + jx * v[:, :1] + jy * v[:, 1:]
+
+    def _below(self, n, c):
+        """True if panel n hangs off c in the tree (c is one of its ancestors)."""
+        while n is not None:
+            n = self.parent[n]
+            if n == c:
+                return True
+        return False
+
+    def _fit(self, c, nbrs, p):
+        """Warp panel c -> design coords from its seams to placed panels nbrs
+        [(n, c_pts, n_pts)]; p = the tree parent (decides whether the panel is flipped)."""
+        cm = self.car.mask(c)
         ys, xs = np.nonzero(cm)
+        cs_all, ds_all, out_all = [], [], []
+        for n, cpts, npts in nbrs:
+            key = np.round(cpts, 1)
+            _, u = np.unique(key, axis=0, return_index=True)
+            cs, ns = cpts[u], npts[u]
+            D = self.to_design(n, ns)
+            # direction straight out of the neighbour, in design coords: step a little inside
+            # n along its edge normal and look where that lands
+            nn = _normals(ns, self.car.mask(n), inward=False)
+            ok = ~np.isnan(nn).any(1)
+            out = np.full(ns.shape, np.nan)
+            if ok.any() and frozenset((c, n)) not in self.car.loose:
+                Din = self.to_design(n, ns[ok] - nn[ok] * 6)
+                v = D[ok] - Din
+                out[ok] = v / np.maximum(np.hypot(*v.T), 1e-6)[:, None]
+            # no angle pin next to another seam: where two seams meet at a corner their
+            # directions disagree and the pins fold the warp (GT3 R bumper corners)
+            others = [x[1] for x in nbrs if x[0] != n]
+            if others:
+                o = np.vstack(others)
+                near = np.array([np.hypot(*(o - q).T).min() < 150 for q in cs])
+                out[near] = np.nan
+            cs_all.append(cs)
+            ds_all.append(D)
+            out_all.append(out)
+        cs, ds, outd = np.vstack(cs_all), np.vstack(ds_all), np.vstack(out_all)
         dseam = np.full((SIZE, SIZE), True)
-        ip = np.clip(np.round(cpts).astype(int), 0, SIZE - 1)
+        ip = np.clip(np.round(cs).astype(int), 0, SIZE - 1)
         dseam[ip[:, 1], ip[:, 0]] = False
         dist = ndimage.distance_transform_edt(dseam)
         step = 24
         gy, gx = np.mgrid[0:SIZE:step, 0:SIZE:step]
         far = cm[gy, gx] & (dist[gy, gx] > 120)
         anchors = np.stack([gx[far], gy[far]], 1).astype(float)
+        # flipped or not: decided against the tree parent's own sheet, as before
+        p_cs = [x for x in nbrs if x[0] == p][0]
+        pm = self.car.mask(p, grow=4)
         sample = np.stack([xs[::97], ys[::97]], 1).astype(float)
         best = None
         for refl in (False, True):
-            T = _similarity(cpts, ppts, refl)
-            q = np.round(T(sample)).astype(int)
-            ok = (q >= 0).all(1) & (q < SIZE).all(1)
-            overlap = pm[q[ok, 1], q[ok, 0]].mean() if ok.any() else 0
-            err = np.hypot(*(T(cpts) - ppts).T).mean()
+            Tp = _similarity(p_cs[1], p_cs[2], refl)
+            q = np.round(Tp(sample)).astype(int)
+            okq = (q >= 0).all(1) & (q < SIZE).all(1)
+            overlap = pm[q[okq, 1], q[okq, 0]].mean() if okq.any() else 0
+            err = np.hypot(*(Tp(p_cs[1]) - p_cs[2]).T).mean()
             score = overlap * 1000 + err
             if best is None or score < best[0]:
-                best = (score, T)
-        T = best[1]
-        # dedupe seam points (mirrored halves can repeat the centre)
-        key = np.round(cpts, 1)
-        _, u = np.unique(key, axis=0, return_index=True)
-        cs, ps = cpts[u], ppts[u]
+                best = (score, refl)
+        T = _similarity(cs, ds, best[1])
         # Angle continuity: pinning positions alone let the spline shear the child right at the
         # seam (BMW bumper: 4:1 stretch, stripes kinked and bent). UV unwraps are close to
         # angle-preserving, so the direction straight into the child must continue the
-        # direction straight out of the parent, at the seam's scale: pin points stepped
-        # inward along the child's edge normal to points stepped outward along the parent's.
-        nc = _normals(cs, self.car.mask(c), inward=True)
-        np_ = _normals(ps, self.car.mask(p), inward=False)
-        ok = ~(np.isnan(nc).any(1) | np.isnan(np_).any(1))
+        # direction straight out of the neighbour, at the seam's scale: pin points stepped
+        # inward along the child's edge normal to points stepped outward from the neighbour.
+        nc = _normals(cs, cm, inward=True)
+        ok = ~(np.isnan(nc).any(1) | np.isnan(outd).any(1))
         extra_s, extra_d = [], []
         for dd in (12, 28, 48, 72):
             extra_s.append(cs[ok] + nc[ok] * dd)
-            extra_d.append(ps[ok] + np_[ok] * dd * T.scale)
+            extra_d.append(ds[ok] + outd[ok] * dd * T.scale)
+        # away from the seams: follow the NEAREST seams' similarity (weighted by distance), not
+        # one fit for the whole panel. A strip seamed to three panels at different angles (GT3 R
+        # bumper: nose + two fender corners) otherwise turns in an S between the seams.
+        if len(anchors) and len(nbrs) > 1:
+            # seams read across a gap are too short and loose to set a local rotation
+            firm = np.concatenate([np.full(len(x[1][np.unique(np.round(x[1], 1), axis=0, return_index=True)[1]]),
+                                           frozenset((c, x[0])) not in self.car.loose) for x in nbrs])
+            if not firm.any():
+                firm[:] = True
+            at = np.array([_similarity_w(cs[firm], ds[firm], best[1],
+                                         np.exp(-(np.hypot(*(cs[firm] - a).T) / 250) ** 2) + 0.2)(a[None])[0]
+                           for a in anchors])
+        else:
+            at = T(anchors) if len(anchors) else anchors
         src = np.vstack([cs] + extra_s + [anchors])
-        dst = np.vstack([ps] + extra_d + ([T(anchors)] if len(anchors) else []))
+        dst = np.vstack([ds] + extra_d + ([at] if len(anchors) else []))
         rbf = RBFInterpolator(src, dst, kernel="thin_plate_spline", smoothing=1.0)
         # evaluate on a coarse grid over the panel (+margin), interpolate per pixel later
         y0, y1, x0, x1 = ys.min() - 8, ys.max() + 9, xs.min() - 8, xs.max() + 9
@@ -613,10 +811,7 @@ class Unfold:
     def to_design(self, c, pts):
         """Sheet points on panel c -> design coords (the root panel's sheet coords)."""
         pts = np.asarray(pts, float)
-        while self.parent[c] is not None:
-            pts = self.to_parent(c, pts)
-            c = self.parent[c]
-        return pts
+        return pts if c == self.root else self.to_parent(c, pts)
 
     def field(self, grow=4):
         """(X, Y, on): design coords for every sheet pixel on the unfolded panels (NaN off them).
@@ -664,10 +859,15 @@ def build_check(key):
         if pa in done:
             continue
         group = _component(car, pa)
-        root = max(group, key=lambda c: (len({n for n, *_ in g.get(c, [])}), car.panels[c]["area"]))
+        # most seam length read (GT3 R: the side panel has as many neighbours as the hood, but
+        # through two short readings across the fender vents; rooted there the front came out garbled)
+        root = max(group, key=lambda c: (round(sum(_len(own) for _, _, own in g.get(c, [])) / 100),
+                                         car.panels[c]["area"]))
         u = car.unfold(root)
-        done |= set(u.parent)
         X, Y, on = u.field()
+        for c in set(u.parent) & done:   # a shifted panel an earlier group already painted
+            on &= ~car.mask(c, grow=4)
+        done |= set(u.parent)
         # black stripes at 30 deg + red stripes at -60 deg: a step or a kink at a seam shows in both
         s1 = ((X * math.cos(0.52) + Y * math.sin(0.52)) % 72) < 22
         s2 = ((X * math.cos(-1.05) + Y * math.sin(-1.05)) % 150) < 10

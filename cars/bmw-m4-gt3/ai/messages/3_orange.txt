@@ -1,0 +1,13 @@
+Attach these 4 images first: guide_atlas.png, guide_legend.png, guide_wire.png, concept_gofast.webp
+(new Gemini chat for every message). Then paste everything below the line.
+------------------------------
+This image is a flat 2048x2048 UV paint sheet for a race car, not a picture of a car (image 2 names each
+colour). Keep the exact same layout. Draw ONLY this element: bright orange swoops around the front bumper corners and front fenders sweeping back along the hood edge, orange speed slashes and shards cutting through the navy on the doors and quarters (pointing toward the rear), a thin orange line along the lower door/splitter edge, a few orange lightning-bolt marks on the hood, scattered orange hex tiles near the graphics. Draw nothing else.
+Style: GoFAST Racing BMW M4 GT3, "Updated livery concept v2: same identity, more detail, more impact". Palette: navy #1E2744, vivid orange #FF7300 (league orange #E36400), white / light grey. Flat vector vinyl style, bold shapes, no gradients, no glow.
+- Fill EVERYTHING else, every panel, the background and the dark areas, with one flat solid magenta #FF00FF.
+  No base colour, no pattern, no shadows, no outlines, no gradients, no glow, no anti-aliasing halo.
+- The element itself is flat 2D vinyl art with crisp edges. Never use magenta, pink or purple in the element.
+- The element sits inside the coloured panels, clear of the dark grey areas and of the plain white number
+  rectangles. No text from this brief copied into the image, no car numbers.
+- Mirror rule: the lower half is the car's left side, the upper half its right side (upside down). Draw the
+  element on both halves, mirrored, with text/logos reading correctly.

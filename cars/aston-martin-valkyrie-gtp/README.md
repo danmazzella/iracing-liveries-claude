@@ -53,11 +53,18 @@ Other Number Blocks at x 1706-1794 y 1968-2032 and x 1901-1989 y 1881-1945: not 
 - Roof/engine-cover top is ONE island (x 9-981, y 134-600) with its own centre line at **y 367**.
 - Hood badge must stay at x < ~345 (canopy edge); 80 px at x 298 between the nose number and the canopy.
 - Windscreen banner: only the brow island x 709-787 is visible; the rest of the Car_decal banner is glass.
+- Wing top element D: visible chord from above/behind only ~x 1968-2025 (socal v1: a logo reaching x 2044 lost its
+  letter tops at the rear edge). Keep wing text inside x ~1970-2022 (socal v2: centre 1996, 52 px).
 
 - White GoFAST v5 (final): front orange over headlights + fender pods, navy arrow block with logo on the
   upper sidepod (700-1250, 1585-1722), shards from under it over the haunch, navy roof/engine stripe
   y 292-442 (top band, not mirrored), hornets on fin sides (1400, 468 / 266), navy wing with
   `decal_skip` of the template hatch, bigger number cards. Config: `liveries/white-gofast/designs.py`.
+
+- SoCal v2 (final, in-sim): side wave waterline ~1660 nose -> 1612 sidepod, crest (1395, 1556) on the haunch ahead of the
+  rear-arch hole (x 1450-1650, y 1500-1640); tail flanks H/K show the side design at (x + 90, y + 1075) (K reversed along
+  x, col 28 = rear) and line up with the sides; fin L = side design 1088 px up, M = L flipped about y 367; roof sun at
+  x 40 r 175 (centre y 367) reads behind the canopy. Config: `liveries/socal/livery.py`.
 
 - Seams (`seams.json`, ruler `seams.tga`, shots `seam_*.webp`): panel codes A = sides + hood (both sides),
   B = roof/engine cover, C = nose + fenders, R = spine, L/M = fin sides, W = windscreen brow.

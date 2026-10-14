@@ -3,3 +3,6 @@ numpy>=2
 scipy>=1.13
 psd-tools>=1.10
 opencv-python-headless>=4.10   # only needed for projecting a reference image
+openai>=1.60     # only for tools/aigen.py (gpt-image-1)
+zstandard>=0.22   # only for tools/mip.py (decode iRacing spec .mip files)
+zstandard

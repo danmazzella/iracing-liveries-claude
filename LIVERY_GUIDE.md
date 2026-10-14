@@ -9,6 +9,44 @@ Read this first, then `cars/<car>/README.md` for the car you're painting.
 
 ---
 
+## 0. Principles for every livery (read first)
+
+Distilled from a professional hand-made livery (the GFR BMW V2 GIMP file, sections 13f and 14) and our ~40 in-sim rounds.
+They are colour- and theme-neutral. `liveries/example/livery.py` follows all of them: start new liveries from it.
+
+**Design**
+1. **Tiny palette.** A base, one main colour, one accent. Every other tone is a *shade* of those (`depth.shades(colour)` gives
+   dark / light / deep, with shadows leaning toward red for warm colours and deep blue for cool ones). New hues read as noise.
+2. **Flat shapes + depth passes.** Draw each shape in flat colour, then add depth over it:
+   a shadow (black ~40-60%, fading out: `depth.shadow`), a faceted texture cut to the shape with feathered edges
+   (`lowpoly.overlay`), and a few light/dark slivers (`depth.fade`). Everything fades; only the shape outlines are hard.
+   Smooth gradients still break at panel seams (section 6); random facets and fades don't, because they have no direction to break.
+3. **Overlap tells the order.** Base -> big sweep -> contrast shape -> accent shards -> logos. Each colour starts from the one
+   under it (section 6: nothing floats alone).
+4. **Motion.** Shapes swell toward the rear and end in rear-pointing tips; thin ends taper, never stop square.
+5. **No empty base.** A light base gets a low-contrast pattern (tones within ~10% brightness, like the hex greys) or texture,
+   so plain panels read as finished. Keep bumpers and small panels calm (section 7).
+6. **Hierarchy of marks.** One big wordmark per side, inside a contrasting shape, right behind the number card; one mascot on
+   a plain area of the rear quarter; small marks on small panels (mirrors, lower arch, wing endplate); class badge near the
+   number. Sides and top carry the big graphics. Check the car README for panel edges and notches before sizing text.
+7. **Finish by material.** One spec value per paint colour, mid roughness, contrast through metallic (sections 5, 13b).
+
+**Construction**
+1. **Draw past the panel edges** and let the template's mask and trim clip. Hand-trimmed shapes break at seams and can't be
+   reused on another car; overshooting shapes port cleanly (13g). Never leave filler right at a panel edge: template masks
+   are a little tight in places, and dark filler 1-20 px outside the mask showed in-sim (Ford rear quarter). Bleed the paint
+   ~40 px past every paintable edge (nearest-pixel fill) if a layer stops at the outline.
+2. **Design the car's left side once, mirror it** about the centre line for the right; rotate text, don't mirror it (section 3).
+3. **Logos are separate files on their own layers**, placed last and never painted into shapes. Keep source assets (logos,
+   pattern tiles, textures) as files.
+4. **Template trim and decals sit above the art.**
+5. **Layered file like a hand-made one** (`ora.Layer(..., group=...)`, `tools/ora2xcf.py` for GIMP):
+   `Turn Off Before Exporting TGA` (hidden guides: mask, wire, number/sponsor blocks) and `Paintable Area` holding
+   `Left side/`, `Right side/`, `Top/`, loose logo/card layers and the template trim. A hand-finisher finds his way around.
+6. **Add layers instead of repainting** (`... V2`, `... on top`); keep variants (driver names, sponsors) as hidden layers.
+
+---
+
 ## 1. How it works
 
 Liveries are **Python scripts** that draw straight onto iRacing's 2048x2048 paint sheet
@@ -69,6 +107,8 @@ separate and always recorded in the car README (`iRacing paint folder: \`...\``)
 | `formula-ir04` | Formula IR04 (F4) | `formulair04` |
 | `aston-martin-valkyrie-gtp` | Aston Martin Valkyrie GTP | `amvalkyriegtp` |
 | `porsche-992-cup` | Porsche 911 GT3 Cup (992.2) | `porsche9922cup` (`porsche992cup` is the older 992 Cup) |
+| `mercedes-amg-gt3` | Mercedes-AMG GT3 2020 (Evo) | `mercedesamgevogt3` |
+| `porsche-992-gt3r` | Porsche 911 GT3 R (992) | `porsche992rgt3` (not the Cup car) |
 
 The old short keys (`bmw`, `mclaren`, `ferrari`, `lotus79`, `ir04`, `valkyrie`) are retired: scripts refuse
 them with a pointer to the new key. Never reuse a key for a different car (a BMW GT4 is `bmw-m4-gt4`).
@@ -122,6 +162,8 @@ Conventions that held on both templates:
   down.** Hood, roof and trunk sit across the mirror line (the line is the car's centre line).
   - Design body graphics once in lower-half (car's left) coords and mirror them:
     `y_top = 2*mid - y`.
+    Some panels' twins sit off the exact reflection (BMW right front fender: 27 px): mirror with
+    `seams.Car(key).flip(layer)` (section 4b).
   - Text and logos can't just be mirrored (they'd read backwards). Paste them separately on
     the right side, **rotated 180°**.
   - If a side panel is tilted on the sheet (McLaren: ~5°), the mirrored copy of a rotated logo
@@ -151,7 +193,7 @@ Conventions that held on both templates:
 - The BMW front fender louvers sit next to the grille frame on the sheet, nowhere near the fender.
 - The McLaren front wheel-arch vent is an island on the sheet's **right edge**.
 
-So map every new car first:
+So map every new car first (and **measure the mirror line** by flipping the `Mask` about candidate y values, best overlap wins: the Mercedes grid reading said 1312, the true line is 1327, and every centred graphic sat ~20 px off in-sim):
 
 1. `tools/grid.py "<car>.psd" <wire layer> <key>` (finds the PSD in `psd/`) writes a 32x32 grid of 64px coloured cells
    labelled `col,row` (cell c,r covers sheet x `c*64..c*64+63`, y `r*64..r*64+63`) with the
@@ -164,6 +206,9 @@ So map every new car first:
    undersides, diffuser), straight-on of the other side. List what's still unmapped in the README.
    The paint-screen camera is limited (no low or underside views): ask only for what it can
    reach (zoomed top-down, close-ups from above, the preset side/front/rear views).
+   The user maps in the paint screen only (loading a session for a replay camera takes too long).
+   The installer puts a flat matte spec under mapping paints so lighting doesn't wash labels out (4c).
+   Seams that run along the car can be read off iRacing's gradient pattern first (4c), so screenshots go to the rest.
 3. Read the labels in each screenshot and write a **part → columns/rows table** in
    `cars/<car>/README.md` (see the BMW and McLaren ones). Note the mirror line, the
    orientation of the bumpers (the BMW front bumper's x runs bottom→top), and what 3D parts
@@ -173,7 +218,7 @@ So map every new car first:
 5. **Map the seams** (section 4b) for any panels a design will cross (hood/bumper,
    fender/door, roof/pillars...).
 
-Already mapped here: **BMW M4 GT3** (`cars/bmw-m4-gt3/`), **McLaren 720S GT3 EVO** (`cars/mclaren-720s-gt3/`), **Lotus 79** (`cars/lotus-79/`), **Formula IR04 / F4** (`cars/formula-ir04/`), **Ferrari 296 GT3** (`cars/ferrari-296-gt3/`), **Aston Martin Valkyrie GTP** (`cars/aston-martin-valkyrie-gtp/`); **Porsche 992.2 Cup** (`cars/porsche-992-cup/`, part table done 2026-10-01, seams not read); **Ford Mustang GT3** (`cars/ford-mustang-gt3/`, first-pass part table 2026-10-01, bumpers approximate, seams not read); **Ford Mustang NASCAR Next Gen** (`cars/ford-mustang-nextgen/`, first-pass part table 2026-10-01; nose at HIGH x, centre line y ~ 1280, left side = low rows; bumpers/spoiler approximate, seams not read).
+Already mapped here: **BMW M4 GT3** (`cars/bmw-m4-gt3/`), **McLaren 720S GT3 EVO** (`cars/mclaren-720s-gt3/`), **Lotus 79** (`cars/lotus-79/`), **Formula IR04 / F4** (`cars/formula-ir04/`), **Ferrari 296 GT3** (`cars/ferrari-296-gt3/`), **Aston Martin Valkyrie GTP** (`cars/aston-martin-valkyrie-gtp/`); **Porsche 992.2 Cup** (`cars/porsche-992-cup/`, part table done 2026-10-01, seams not read); **Ford Mustang GT3** (`cars/ford-mustang-gt3/`, first-pass part table 2026-10-01, bumpers approximate, seams not read); **Mercedes-AMG GT3 2020** (`cars/mercedes-amg-gt3/`, first-pass part table 2026-10-05; nose at low x, centre line y = 1327, left side = high rows, wing = cols 0-10 rows 0-4; seams not read); **Porsche 911 GT3 R (992)** (`cars/porsche-992-gt3r/`, part table + front/roof seams 2026-10-13; centre line y = 1299.5, nose at low x, left side = high rows; rear seams not read); **Ford Mustang NASCAR Next Gen** (`cars/ford-mustang-nextgen/`, first-pass part table 2026-10-01; nose at HIGH x, centre line y ~ 1280, left side = low rows; bumpers/spoiler approximate, seams not read).
 
 Some templates' `Mask` covers almost nothing. The panel (UV island) outlines are then drawn in the
 wireframe layer (Lotus 79: pure green lines in `Wire`): label the regions enclosed by them to get
@@ -256,7 +301,8 @@ where stripes broke and needed 3-8 rounds of nudging (section 7, "Seams between 
 - Stop a seam where an edge turns a corner (a reading past it made a 13:1 warp spike); the
   stretch/gap numbers from the Jacobian check find these before the sim does.
 - Not every panel edge is a seam: the BMW door front edge and the front fender are separated
-  by a 3D vent/gill, so graphics break there whatever you do.
+  by a 3D vent/gill. Graphics still carry over it if you read the two rulers across the vent at equal height and
+  add that as a seam (done on the Porsche GT3 R, see below).
 - Seams can be read in pieces (left half, right corner): readings of the same two panels are
   merged into one seam.
 - Stripe test v2 (BMW): hood → bumper and roof → rails → sides carried the stripes through
@@ -264,8 +310,78 @@ where stripes broke and needed 3-8 rounds of nudging (section 7, "Seams between 
 - Reading precision: the same seam read on the other side of the car (BMW left roof rail)
   landed 5-9 px (~0.1 segment) from the mirrored prediction. Well under the ~60 px that shows
   in the sim, so one side + `mirror_y` is enough.
+- **A panel between three others** (Porsche GT3 R lower bumper: nose above, a fender at each corner) used to follow only the
+  panel it was reached by: the corners under the headlights ignored the fender seams and their stripes ran nearly vertical
+  (73-110 px off). `Unfold` now warps every panel straight into design coords, fitted to **all** placed neighbours it has
+  readings with (when first reached, then once more after the tree is built; never to the panels hanging off it). Two more
+  fixes from the same round:
+  - Away from the seams a panel follows the *nearest* seams' similarity (distance-weighted, blended with the whole-panel fit),
+    not one fit for the whole panel: a strip seamed at different angles otherwise bends into an S between the seams.
+  - No angle pin within 150 px of another seam (where two seams meet their directions disagree and fold the warp).
+  Check every build with the Jacobian (folds = det < 0, stretch = singular value ratio) before the sim. Other cars moved < 1 px.
+- **Join panels across a 3D vent** when graphics should carry over it (GT3 R fender gill -> door): read the two rulers at equal
+  height across the vent and add them as a seam. The grid shows whether the rows really line up there (on the GT3 R the fender
+  sits ~0.8 row lower than the door). Such short readings can't set a big panel's rotation alone: the side panel is placed from
+  both fender readings together, and the stripe test is rooted at the panel with the most seam length read (it used to pick by
+  neighbour count, chose the side panel, and the whole front came out garbled).
+  **Read a vent crossing from the grid, not the ruler**: grid labels on both sides at the same height give the offset directly
+  (GT3 R: door 48 px lower than the fender, scale 1); the ruler readings were 20-30 px off and showed as steps in-sim.
+  Optionally mark such a seam `"gap": true` in `seams.json`: positions are joined but the stripe angle is not forced across the gap (with it
+  forced, the GT3 R door stripes bulged next to the vent), and it doesn't set the neighbours' rotation.
+- **Check the sign of a vent offset from two in-sim rounds, not from reasoning about sheet orientation**: on the BMW upper
+  fender a larger offset moved the stripes down, the opposite of what the panel's sheet layout suggested; three rounds went
+  the wrong way before comparing 106 / 111 / 116 side by side showed it.
+  Below ~5 px, stop measuring close-ups by eye (the camera moves every shot, a curved lip distorts): bisect on the user's
+  better / worse verdicts (BMW: 116 worse, 101 almost, 97 worse -> 104).
+- **A height-varying vent offset also scales the graphic**: an offset sloping 111 -> 88 px over 90 px of fender drew the
+  BMW fender stripes 1.35x wider than the door's in-sim. Keep the offset flat across stripes/bands and put any change in
+  a zone without sharp horizontal lines (the wave).
+- **The offset across a vent can change with height** (GT3 R fender -> door: ~60 px at the top of the shut line, ~35 px at
+  the vent). One grid reading gave a constant 48 (still visibly off at the top), and the seam-map unfold added a tilt that
+  looked worse. Fastest fix: a **numbered band ruler** (`liveries/socal/vent_ruler.py`: 16 px bands of constant sheet y,
+  same number on both panels, right side rotated 180) over the livery; one close-up gives "fender 6 meets door 10" at
+  every height. Then shift the panel by a height-dependent offset.
 - Mirrored panels are paired by overlapping their reflected shapes, not by the panel under the
   mirrored seam points: the BMW roof edge and the rail edge sit 1-10 px apart on the sheet.
+- **A vent offset measured with a ruler goes in `seams.json` "shifts"**, not as a gap seam:
+  `{"panels": ["X", "N"], "onto": "A", "dy": [[1600, 106], [1712, 78], [1721, 74], [1900, 74]]}` = pixel (x, y) on X/N shows
+  the door's design at (x, y + dy(y)). Tried as gap seams first (BMW fender -> door): three short pairs along a slanted fender
+  edge squashed the fender to half scale and pulled the hood in through it (14:1 stretch). A shift applies only to panels no
+  seam placed in that unfold, and its mirror is built from the panels' measured twin offsets.
+- **Not every right-side panel is the plain mirror of its left twin.** `seams.Car(key).twin(code)` finds the twin and its
+  offset from the exact reflection (best overlap). BMW: right front fender side Y is 27 px off (others <= 4 px); McLaren two small
+  panels (BU/BX, CA/CB) ~39 px; Ferrari a few small ones 7-12 px; Ford, IR04, Lotus, GT3 R none. Mirror design layers with
+  `seams.Car(key).flip(layer)` (plain flip, plus those panels resampled from their twin), not a plain flip.
+
+### 4c. iRacing's own patterns: free alignment data (2026-10-14)
+
+Every template has a hidden **`Car Patterns`** group (`car_pattern_000` .. `024`): the patterns of the in-sim paint screen
+(red / green / blue = paint colours 1 / 2 / 3). iRacing's artists drew them on the 3D car, so **their stripes already line up
+across every seam**. `tools/patterns.py sheet <car>` puts them all on one image (`cars/<car>/patterns_sheet.png`).
+
+**`car_pattern_010` is a smooth red -> green -> blue gradient from nose to tail** (all 11 templates we have). Its colour says
+how far along the car a sheet pixel is: a front-to-rear position map, without screenshots. It covers 25-58 % of the paintable
+area; the very nose and tail are flat red / blue (no reading there).
+- `tools/patterns.py length <car>` decodes it to `cars/<car>/length.npz` (0 = nose end, 1 = tail end, NaN where unknown) and
+  `length_sheet.png` (contour lines every 5 %, numbered). Decode from the red/green and green/blue ratios, not the 8-bit hue
+  (the hue steps were too coarse: BMW rail matches went from 0.14 to 0.08 segment).
+- **Checked against our in-sim seam readings (BMW)**: equal length across the roof / rail seam lands within **0.08 segment
+  (~5 px)** of every ruler reading. Hood / fender tops: C1 13.00 vs 12.92, C2 11.08 vs 11.09 (those readings were from sheet
+  adjacency and unverified, so this backs them).
+- `tools/patterns.py match <car> D23-D28 B60-B74` suggests `seams.json` pairs: for each ruler code in the first range, the
+  point in the second range with the same length. **Only seams that run along the car** (roof rails, hood / fender tops, sills,
+  door / quarter tops). A seam across the car (roof / windshield, hood / bumper, trunk / bumper) has one length all along it:
+  the tool flags those ("N segments match"); read them in the sim as before. Near the nose / tail the gradient flattens and
+  gets flagged too.
+- Use: fill in lengthwise seams before a ruler round, and in liveries draw anything that changes front-to-rear (fades, colour
+  splits "at the B-pillar", bands across the car) as a function of `patterns.length(key)`: it lines up on every panel the
+  gradient covers, with no seam map at all.
+- Not used yet: the other patterns' stripe edges (more seam matches, also across the car) and any pattern that might give
+  height on the sides (`car_pattern_015` has banded sides on the BMW).
+
+**Mapping paints install with a flat matte spec** (`install_paint.ps1 -Grid / -Seams / -SeamCheck`, from 2026-10-14):
+metallic 0, roughness 255, alpha 0, so garage lighting doesn't put glare and reflections over the labels. Before, they went in
+with no spec (iRacing's glossy default).
 
 ---
 
@@ -309,6 +425,15 @@ matte navy (0/190) next to gloss orange (0/4) is the biggest visible gain; a few
 Chrome on text or flat near-vertical panels (windshield banner, wing) reflects the dark cockpit/sky gradient and goes **dark and muddy**: keep lettering gloss.
 Chrome tiles in the flat garage sky read dull blue-grey; keep them few. User verdict on v2: "looks better", but the difference was small.
 **Bold version wins**: big areas of real contrast (dark navy as chrome 255/0, white mosaic matte 0/200, orange gloss 0/4) - user: "I like that a lot". Go for large chrome-vs-matte regions, not subtle tile variation.
+
+**Community source (r/iRacing "proper specmap instructions for GIMP", pasted by the user 2026-10-07; reddit is blocked from here)**:
+R = metalness, G = roughness, B = clearcoat/gloss (the post says "Blue is Gloss"; our sweeps saw no B effect). GIMP values are percentages of 255
+(90% = 230). https://gabirmotors.com/tools/specmapping previews finishes (Gloss, Flat, Matte, Satin, Chrome, Metallic, Candy, Pearl, Velvet) with sliders.
+Its **Metallic preset = 90% metallic, 40% roughness, 0% clearcoat = spec colour #e66600 (230/102/0)**: metallic with a *mid* roughness, not the
+near-0 roughness we used on orange (0-8). Untested in-sim; `liveries/gofast/orange_metal.py` writes it as `spec_om230r102.tga`.
+GIMP method in the post: channel groups in Addition mode, a Multiply layer filled with the pure channel colour, then a greyscale Normal layer per channel.
+
+**Finished team paints (section 13) use mid values**: orange metallic ~206 with roughness ~100, white 74/77, navy 0/125 (decoded from their `.mip` files; `tools/mip.py`). Our "orange goes bronze" rows above all had roughness 2-8; the mid-roughness combination is untested by us.
 
 Rules of thumb:
 - **Metallic darkens coloured paint** (reflections replace the base colour). Bright, saturated
@@ -507,3 +632,246 @@ Things to know:
   Flattening drops the hidden guides and the alpha (24-bit). Then install it like any build.
 - GIMP 3.2 exports the same pixels as the script's TGA except on anti-aliased edges (it blends
   soft edges slightly differently). Nothing visible on the car.
+
+---
+
+## 12. Using an AI image model for artwork (untested with a real model, 2026-10-06)
+
+The model doesn't know our UV maps, so give it a flat labelled layout and take back only artwork.
+`cars/<car>/regions.json` names the panels (panel code from the seam ruler -> name, trim/decal layers,
+no-paint zones; BMW done).
+
+1. `tools/aibrief.py <car> "design text"` -> `cars/<car>/ai/guide_atlas.png` (named, colour-coded panels,
+   unpaintable area dark, centre line, front arrow), `guide_wire.png`, `prompt.md` (rules + region table).
+2. Give the model the images + prompt (image-edit model, "redraw this sheet as artwork, same layout").
+3. `tools/aiingest.py <car> output.png --name x [--mirror]` (run in a livery folder) -> resize to 2048,
+   optional mirror of the car's left half onto the right, clip to the paintable mask, template trim and
+   decals on top; writes TGA, alpha layer PNG, layered `.ora`, preview.
+
+Expect the model to drift: panel edges move, text garbles. Use it for textures/patterns/backgrounds and
+keep placement, logos and numbers in code. Open question: does it respect panel layout well enough?
+Not done yet: drawing on the seam-unfolded canvas (4b) so art is continuous across panel edges.
+
+First real round (2026-10-06, BMW, "gold and copper" prompt, 1024x1024 output): the model kept every
+panel in place and made the right half a clean mirror of the left, so the atlas approach works.
+Defects: it copied the red dashed centre line into the art (ingest now blends it out) and drew some
+pale outlines along panel edges. Output was 1024 px, upscaled 2x (soft edges: fine for flat shapes, ask
+for 2048 if the tool allows). In-sim result not recorded yet.
+Round 2 (GoFAST-style prompt with logos, mascot, hex tiles): the model placed logos/mascots on the right
+panels and drew readable text on both halves (do NOT use --mirror then). The BMW wing's trim layer covers the
+whole wing, so `regions.json` `over_trim: ["E"]` makes ingest put the art back on top of it there. The
+model ignores number-card positions: the right-door "GOFAST RACING" was half under the number card. Tell it
+where the number blocks are, or move the logo afterwards.
+In-sim (BMW, GoFAST-style round 2): "some issues but decent". Panel placement held: hood mascot, quarter mascots,
+hex tiles, hood/door/bumper graphics all landed where drawn. Issues: right-door GOFAST RACING cut by the
+number card ("GOFAS RACIN"; left door was fine); the wing shows only a thin band of its top face, so the big
+wing logo reads as stray stripes; whites/greys read warmer and darker in the sim than on the flat sheet.
+Fix applied: `aibrief.py` now draws the template's Number Blocks (grown 45 px, the plate is bigger than the
+block) into the atlas as white NUMBER boxes and the prompt says to keep art clear of them.
+
+---
+
+## 13. Reference: finished team paints from other makers (2026-10-07, analysed, not built from)
+
+The user supplied five finished GFR (GoFAST) paints, each with the `.mip` iRacing built from its spec: BMW M4 GT3,
+Aston Martin Vantage GT3 EVO (Nürburgring 24h), Ford Mustang GT3 (IMSA), Lamborghini Huracán GT3 EVO (Sebring 12h)
+and McLaren 720S GT3 (older, different design). Nothing here was tested by us in-sim; it is measured from their files.
+Previews + decoded specs: `liveries/gfr-examples/previews/` (private). Decoder: `tools/mip.py` (needs `zstandard`).
+
+### 13a. Reading a spec back out of a `.mip`
+iRacing writes `car_spec_<id>.mip` next to the spec TGA. It holds the **full 2048 spec** as DXT5 inside zstd chunks, so any
+finished car's finish can be inspected: `tools/mip.py "x_spec.mip" out.png` (format notes in the script). Lossy: values land
+in steps of ~8, so read medians, not exact numbers. 4 of 5 decoded; the McLaren one uses a second layout (chunk-size table
+first, no zstd magic, codec unknown) and is not decoded. Paints were 32-bit TGAs with alpha all 255 (no alpha tricks).
+
+### 13b. Spec values the finished paints use (metallic R / roughness G, B = 0, median under each paint colour)
+| Paint colour | BMW | Aston | Ford | Lambo |
+|---|---|---|---|---|
+| Orange `#FF7E00` | 206 / 101 | 206 / 101 | 206 / 101 | 156 / 77 |
+| White and all hex-tile greys | 74 / 77 | 74 / 77 | 74 / 77 | 74 / 77 |
+| Navy `#2C395B` | 0 / 130 | 0 / 125 | **74 / 207** (fully matte) | 0 / 125 |
+| Black trim/decal patches | 0 / 75 | 0 / 73 | 0 / 74 | 0 / 66 |
+
+- **One flat spec value per paint colour, no per-tile noise** (std ~3 on the tiles). The "shimmer" idea in section 5 is not what they did.
+- **Orange is metallic ~206 with roughness ~100 (about half the metallic), NOT roughness ~4.** Our guide says orange metallic 215 went
+  bronze/muddy, but those tests used roughness 2-8. Mid roughness is what these keep vivid. Lambo uses 156 / 77: same ~0.5 ratio.
+  Also matches the community "Metallic" preset (230 / 102). **Untested by us: try orange 206/101 on `#FF7E00`.**
+- White/tiles are a pearl (74/77), navy is satin-to-matte (0/125) so the two read very differently next to gloss-ish metallic orange.
+  This is the "material contrast" recipe (section 5) with mid values.
+- Template trim (carbon bumpers, vents, wing parts) keeps its own spec: roughly metallic 240, roughness 64-112 (BMW red-orange
+  240/80, Aston pink 240/112 with B ~80-88 on those regions). Logos/badges on the Aston use chrome-like 248/0. **B is non-zero only on
+  the Aston's template-trim regions**, so B probably comes from the template's own spec group, not from the artist.
+- Spec areas outside the paintable sheet (the brown fill) hold junk; ignore.
+
+### 13c. Palette (sampled medians)
+Navy **`#2C395B`** (44,57,91) and orange **`#FF7E00`** (255,126,0) in all four GT3 paints; the McLaren uses orange ~`#FF9018`, white
+`#FCFCFC` and SickKids blue `#3C88CC`. These are **lighter/brighter than our league colours** (navy `#1E2744`, orange `#E36400`/`#FF7300`),
+so check which the league actually wants. Tile base: three light greys `#F3F3F5`, `#ECECEE`, `#E1E2E4` (cool, slightly blue)
+over pure white `#F4F4F4`; the brown `(83,71,65)` = `#534741` is the template's unpaintable fill colour.
+
+### 13d. Design anatomy shared by BMW / Aston / Ford / Lambo
+One design adapted to each car's sheet, not four new designs:
+- White hex-tile base (tiles ~90-110 sheet px across, 3-4 grey shades, no gradient toward the rear).
+- Door/quarter: a **navy wedge** with a rear-pointing **jagged orange lightning shard** above and below it, an orange underline under
+  the banner, and the **GOFAST RACING banner** (orange GO, white FAST, small RACING) inside the wedge. The wedge points rearward.
+  Banner goes on the door beside the number block (sponsor stickers sit between block and banner).
+- Hornet mascot as **orange outline line-art** on the white rear quarter (both sides, rotated 180 on the far side).
+- Roof: one big navy shape (BMW: triangle widening rearward; Lambo: long wedge; Ford: double navy stripes with a thin white line,
+  running hood -> roof -> deck). Roof/hood carry the boldest graphic.
+- Windshield banner: dark/navy with GOFAST RACING (BMW) or a sponsor block (Aston "GRAN TURISMO", Lambo "SQUADRA CORSE" green).
+- Orange fills the small awkward islands (louvers, arch vents, mirror backs); orange sweeps on the hood/fender fronts.
+- Realism layer on top: sponsor stickers (WeatherTech, Michelin, Motul, Falken, H&R, Sport Auto, VP), class badges (PRO / GTD / GTD PRO),
+  event badge on the roof or sill (Sebring 12hr, Nürburgring 24h), tiny **driver-name strip with flags** above the rear quarter
+  (`C.GRIFFITH`, `B.BLACKLOCK`...), manufacturer wordmark on the sill (FORD PERFORMANCE) and rear bumper, "TEAM GFR" on the wing/bumper.
+  Small text and badges are what make them look like real team cars; ours are mostly big shapes.
+- Number blocks are left as plain white cards/sticker boxes (iRacing draws the number), consistent with section 2.
+- Weak one for contrast: the McLaren is big flat navy/orange swooshes with unused flat white panels and none of the tile/shard detail.
+
+### 13e. Ideas to try next (not done)
+1. Orange at 206/101 (and 156/77) in a spec test on a vivid orange base; white 74/77; navy 0/125.
+2. A shared "GoFAST kit" (palette, tile base, shard shapes, banner, hornet outline, driver strip) with per-car placement config.
+3. Add sponsor/driver-name layers as small decals; they cost little and sell the "real team car" look.
+4. Decode the McLaren `.mip` (second layout) to see how the older paint finished its swooshes.
+
+**Spec decoded from a hand-built team livery (GFR BMW, 2026-10-07)**: `.mip` files (iRacing's spec cache) decode with `tools/mipspec.py`.
+All five GFR examples share one spec: body/white 74/77, orange 206/101 (metallic 81%, roughness 40%), navy/dark 0/125-130 (satin, non-metal), carbon trim 0/32. Paint: orange flat `#FF7E00`, navy flat `#2C395B`, white `#EDEDEF`.
+Their shiny vibrant orange = high metallic + MID roughness over a bright base, not metallic with roughness 0-8 (which went dark/brown). `gofast/v24.py -Finish gfr` reproduces it. In-sim result pending.
+
+### 13f. GFR BMW V2 (2026-10-11): what changed and what to copy
+Friend's updated BMW M4 GT3 (`liveries/gfr-v2/`, the user's target look: "absolutely perfect"). Same layout as V1 (13d); the gains are in
+**shading and finish**, not new shapes. Measured from the TGA and the decoded `.mip`:
+
+| Area | V1 | V2 |
+|---|---|---|
+| Orange | flat `#FF7E00`, spec 206/101 | **faceted "low-poly" orange**: big triangles (~100-300 px) shaded `#CE4C00` -> `#FF7E18` (median `#F0690B`); spec **181/101** |
+| Navy | flat `#2C395B`, 0/130 satin | still flat `#2C395B`, but **metallic 107/101**, plus a few darker navy streaks and white->transparent glint slivers inside the wedges |
+| White/hex tiles | 74/77 | 74/77 (unchanged), tiles `#F0F0F0`/`#E8E8E8`/`#E0E0E0` |
+| Carbon/template trim | 0/32 | **252/77-85** (metallic carbon) |
+| Wing banner black | | 0/142 (matte) |
+| Roof | big navy triangle | white hex with navy wedges and orange shards (lighter, more motion) |
+| Extras | driver-name strip | names dropped; GFR roundel on the hood, GT3/PRO class card on the hood, small GFR logos on the mirrors, more islands covered |
+
+Lessons for our scripts:
+- **Facets, not smooth gradients.** Our rule "flat colour across seams" (section 6) holds for *smooth* gradients. Random facet shading
+  has no direction, so a mismatch at a seam just looks like another facet edge: depth without the seam problem. How he built it
+  (from his GIMP file, section 14): flat orange shapes underneath, one low-poly orange image laid over them, cut to the shape with
+  feathered edges. `tools/lowpoly.py` makes that texture and the feathered cut.
+- **Every colour gets a mid-roughness spec** (77-101). No body colour in V2 is near roughness 0; contrast comes from metallic (navy 107,
+  orange 181, trim 252) vs white pearl 74. Untested by us in-sim.
+- **Motion details inside flat areas**: darker streaks + glint slivers in navy, layered jagged shards (orange over navy over white) with
+  thin white gaps between layers.
+- Same design is ported per car by hand by the friend (V1 exists for BMW, Aston, Ford, Lambo; see `liveries/gfr-examples/`).
+
+### 13g. Reusing someone's layered GIMP file (2026-10-12)
+A hand-made livery's `.xcf` is far better source material than its flattened TGA: shapes, logos, cards and the base
+pattern come apart cleanly. GIMP 3 reads it headless (`gimp-console -i --quit --batch-interpreter=python-fu-eval -b
+"exec(open('script.py').read())"`). Export each layer by **hiding all leaf layers, showing one at a time and saving the
+canvas**; copying layers into a new image (`Gimp.Layer.new_from_drawable`) silently lost pixels. Check the export by
+re-compositing and comparing with GIMP's own flatten (`merge_visible_layers`). Artists draw shapes past the panel edges
+and let the template mask clip them: warp those shape layers, stamp logos/cards undistorted, re-tile the base pattern
+(`liveries/gfr-v2/port.py`). Fill holes in his layers first: he skipped spots that can't be painted on *his* car (hood
+vents), which became hard-edged white notches on the Ford. Extend each layer into holes enclosed by a source panel only; spreading
+into all unpaintable space dragged unrelated art (from around a tail light) onto the target. Inpaint the holes (OpenCV
+Navier-Stokes) rather than nearest-pixel fill, which left blocky steps in-sim. Also erase art the source car hides under
+3D parts (his bits at the BMW tail-light corner showed as a dark blotch on the Ford), and don't sample past a source panel's
+edge where a neighbouring panel's art lives: extend the panel's own edge instead. When continuing art across a seam, follow
+each edge's own direction (structure tensor), not the nearest pixel: nearest-pixel continuation bends diagonal shards to
+right angles at the seam (Ford v17). Warp layers on **premultiplied alpha** (transparent pixels are often black: plain
+interpolation puts a dark fringe on every edge), bilinear rather than Lanczos (rings where layers overlap), and supersample
+anything computed per pixel (4x4) so edges stay anti-aliased; stretched UV strips magnify stair-steps.
+
+---
+
+## 14. Layer recipe from a pro GIMP livery (GFR BMW V2 .xcf, 2026-10-12)
+
+The friend's working file for the paint in 13f (`liveries/gfr-v2/bmw-m4-gt3/reference/GFR_V2.xcf`, layers exported to
+`xcf_layers/` with `manifest.json`). How a livery the user called "absolutely perfect" is put together, to copy in our scripts
+and in any hand-finished `.ora`/`.xcf`.
+
+### 14a. File structure
+He kept iRacing's template structure and added his work inside it:
+
+```
+Custom Spec (hidden)                   template's spec groups (metal / rough / clearcoat), not his final finish (that was the .mip)
+Turn Off Before Exporting TGA          Mask, wire, Number Blocks, Sponsor, License, Car Mandatory  (hidden for export)
+Paintable Area #1
+  GFRshort.png (x2)                    small logos (mirrors)          <- one-off logos, cards, banner on top, loose
+  window fix, GFRwindowbanner.svg      banner art + a navy patch fixing its ends
+  pro#.svg (x3)                        number cards (vector, one per block)
+  Car_decal, Carbon Fiber              template trim, ABOVE all his art
+  GFRLOGO2.0.png #2                    wing wordmark
+  Top/                                 hood + roof: Bluie Top, Orange top, shading copies, roundel
+  Side 1 copy #1/                      right door = the left-door group duplicated, flipped vertically, moved 574 px
+  Side 1 copy/                         left door (the one he designs)
+  Hex/                                 one hex tile image placed 9x, each copy erased to the body
+  Paintable Area                       solid navy fill (whatever the hex doesn't cover reads navy)
+  Car Patterns (hidden)
+```
+
+- **One group per area of the car** (left side, right side, top), plus loose layers for logos/cards that sit on top of everything.
+- **Design one side, duplicate the group, flip it vertically about the centre line** for the other side, then swap in readable
+  (rotated, not mirrored) copies of text logos. Our scripts do the same with `y_top = 2*mid - y` (section 3).
+- **Shapes are drawn past the panel edges** and the template (mask + trim on top) clips them. Nothing is hand-trimmed to the
+  UV outline except the hex. That is also why his layers port well to another car (section 13g).
+- **Logos are imported files** (PNG/SVG) on their own layers at 100%, never painted into shape layers. Cards are one SVG per
+  number block. Names show iteration (`Orange V2`, `Orange V2 on top`, `Blue side V2`): he adds a layer rather than repaint one.
+
+### 14b. The shading recipe (per door, bottom -> top)
+| Layer | What it is | Values measured |
+|---|---|---|
+| Orange side 2, Orange V2 | flat orange base shapes | `#FF7E00`, opaque |
+| Blue side V2 | flat navy wedges (the door wedge, roof-line sweep) | `#2C395B`, opaque |
+| Blue Faded | navy slivers over white = soft light-blue "glint" | navy at alpha ~171 (67%) |
+| Blue details | darker navy streaks inside the wedges, fading out | `#1E273F`, alpha ramps 62 -> 255 |
+| Orange V2 on top | small orange shards over the navy (with their own shading) | `#FF7E00` + texture |
+| low-poly image x4-5 (`8fa48afc...png`) | one faceted orange image, copied, cut to the orange shapes, edges feathered | `#CE4C00`-`#FF7E18`, 26-56% of its px semi-transparent |
+| Orange side detail | **black at 62%** under the facet copies, fading out: a shadow that darkens the front of the orange | black, alpha ~158 + gradient |
+| GFRLOGO2.0.png, hornet, GFR | logos on top | - |
+
+The depth comes from **three cheap passes over flat shapes**: a dark shadow layer (black ~60%, gradient fade), a faceted texture
+cut to the shape with feathered edges (facets in some places, flat colour showing in others), and light/dark streak slivers in the
+navy. All of it fades; nothing ends in a hard edge except the shapes themselves.
+In our scripts: draw the flat shape, then `lowpoly.overlay(lowpoly.texture(...), shape_alpha)`, then a black ~60% copy of the
+shape with a linear alpha ramp underneath the texture, then a few navy streak polygons with an alpha ramp.
+
+### 14c. Design rules visible in it
+- **Palette is tiny**: navy `#2C395B`, orange `#FF7E00` (shaded `#CE4C00`-`#FF7E18`), dark navy `#1E273F`, hex whites/greys
+  `#E0E0E0`-`#F8F8F8`, black only as shadow. No other colours except inside logos.
+- **Layering order tells the story**: white hex base -> orange sweep -> navy wedge -> orange shards on the navy -> logos.
+  Each colour overlaps the previous one; no colour floats alone (section 6 "start from something").
+- **Sharp, rear-pointing shapes**: wedges and lightning shards all point rearward and get thinner toward their tips.
+- **Placement**: door wordmark inside the navy wedge right behind the number card; hornet on the rear quarter (white hex, so the
+  orange line art reads); small GFR on the lower rear arch; roundel on the hood nose; class card (GT3 / PRO) beside it; GOFAST
+  banner on the windshield; GOFAST on the wing; GFR on the mirrors. Sides, hood and roof carry the big graphics; bumpers stay calm.
+- **Hex base**: hexes 52 px across (88.7 px per two rows), 3-4 light greys, flat (no gradient toward the rear).
+- **Driver names were dropped** between versions (they were hidden layers in `Top`): keep such details on hidden layers so a
+  variant is a visibility toggle.
+
+### 14d. What we changed in our tooling because of it
+- `tools/lowpoly.py`: the faceted texture + feathered cut (14b).
+- `tools/ora.py`: layer groups (`Layer(..., group=("Paintable Area", "Top"))`, `hidden_groups=`), so our `.ora` files can follow
+  his structure; `tools/ora2xcf.py` turns them into `.xcf` (perceptual compositing, so GIMP shows exactly the TGA).
+- `liveries/gfr-v2/port.py`: ports his layers to another car and writes them back with his names and groups (13g).
+- For new liveries: organise the `.ora` like 14a (template guides in a hidden "Turn Off Before Exporting TGA" group, one group per
+  car area, logos/cards loose on top, template trim above the art), so a hand-finisher finds his way around.
+
+---
+
+## 15. Other tools and data out there (looked at 2026-10-14)
+
+- **icarmap** (icarmap.com, Discord bot, closed source): wraps one image over 100+ cars with no breaks at seams. Method not
+  published; that result on 300-panel cars needs the 3D mesh + UV per car (project the image in 3D, write it back to the
+  sheet). Meshes would have to come from the sim's files or GPU captures (terms of service / anti-cheat grey area): not for us.
+  Our nearest equivalents: the seam unfold (4b) and the length gradient (4c).
+- **iRacing's template server is public, no login**: `https://ir-core-sites.iracing.com/members/member_images/cars/car_templates/<zip>`
+  (e.g. `132_template_M4GT3.zip` = BMW M4 GT3). The zip names are on tradingpaints.com/cartemplates.
+- **github.com/hugoUCV/iracing-ai-paint-generator** (MIT): `data/iracing_car_catalog.json` lists 183 cars with display name,
+  **exact iRacing paint folder** and template zip, scraped from Trading Paints. Use it to look up a folder name instead of
+  guessing. Also per-car wireframe PNGs; panel atlases for 3 NASCAR cars only. No seam data.
+- **Overspray** (github.com/ModestoHagney/clearcoat, fork of OblivionsPeak's Clearcoat): browser livery editor. No 3D: its
+  "Live" mode rewrites `car_<id>.tga` in the paint folder after every edit (Chrome/Edge folder access). Worth copying: its
+  Map mode outlines panels by hand, names them, pairs twins and links edges; linked edges get **the same run of colour bands on
+  both sides** (order reads differently backwards, so a link made the wrong way round shows) as a guide layer on the car.
+- **SimWrapMarket** downloads: Photoshop automation templates for oval/dirt cars; nothing for alignment.
+- "UV checker" maps (generic labelled chequerboards from 3D modelling) = what `tools/grid.py` already is.
+- Nobody publishes panel names or seam connections for iRacing cars; our `cars/<car>/` seam maps fill that gap.

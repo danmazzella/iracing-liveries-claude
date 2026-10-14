@@ -78,6 +78,9 @@ smaller y = car's right side. The top side panel (rows 10–15) is upside down.
   y ≈ 1588-1672 (left; cols 19-22 row 25; the slat sides sample a bit beyond that, so paint
   x 1195-1500, y 1558-1700), mirrored y ≈ 951-1035. They are next to the grille
   frame (cols 15-18 row 25) on the sheet, not near the fender.
+  In 3D they sit among the fender-top cells 6-10, rows 24-25 (`grid_top.webp`): louver x 1212-1482 ~ fender x 400-640 at
+  the same sheet y? **No**: copying the fender art that way came out as broken bars in-sim (socal v7). The slats need
+  their own ruler before a design can run through them; paint them one colour meanwhile.
 - Hood vents (left): ≈ x 380-530, y 1400-1520.
 - Fog light on the bumper ≈ x 80–150, y 1540–1670 (left side). Hood pin ≈ (315, 1483).
 - Roof logo: centre (1262,1312), rot 90 = text top toward the nose. `fit()` rotates first, so
@@ -106,6 +109,11 @@ thin-strip fix), `seamcheck1_top` / `seamcheck1_front` (stripe test v1). All .we
 | Hood C ↔ front fender tops M (right) / N (left, mirrored), C0-C3 | C0↔M14.47 ... C3↔M8.92 | fender-side labels too small to read (`seam4_hood_fender_left`), but the two edges are drawn 1-2 px apart on the sheet (like the roof rails, which joined 1:1 in-sim), so pairs come from the sheet. **Unverified in-sim.** Stops at C3: extending to C4 (by the headlight, where the fender edge turns a corner) made a 13:1 warp spike |
 | Trunk W ↔ rear bumper R/L | - | not read yet |
 
+**Gradient check (2026-10-14, `tools/patterns.py`, LIVERY_GUIDE 4c)**: iRacing's nose-to-tail gradient pattern predicts the roof/rail
+readings within 0.08 segment (`match bmw-m4-gt3 D23-D28 B60-B74` -> B69.10, 68.10, 67.12, 66.10, 65.16, 64.08) and backs the
+unverified hood/fender-top pairs (C1 -> M13.00, C2 -> M11.08; C0 and C3 flagged as unreliable). Roof/banner runs across the car:
+no reading from the gradient there.
+
 Stripe test v4 (`seamcheck4_front.webp`): banner clean (no step, no tearing), hood → bumper
 continuous out to the headlights. User: "close enough for now". The BMW seam map is usable for
 designs across hood/bumper, roof/banner and roof/rails/sides.
@@ -114,6 +122,22 @@ Stripe test v2 (`seamcheck2_*.webp`): hood → bumper clean (no step, no curl); 
 sides → doors/rear quarters continuous, a few px jog at the roof edge; roof → banner stepped
 ~13 px (fixed in v3, see table). Front fenders (M, N, Y), trunk and rear bumper not seamed yet.
 
+
+- **Front fender side (seam panel X, x 506-667, y 1721-1883; right = Y) -> door (A) across the vent** (vent ruler,
+  2026-10-14, `liveries/socal/vent_ruler.py`, shots `liveries/socal/bmw-m4-gt3/reference/ruler_vent_left_*`): at the same
+  height on the car the door sits **74 px lower on the sheet** than the fender, constant at every height, bands level (no
+  rotation). Draw sheet-y graphics on X at door y - 74 (socal BMW v2; confirmed by a shifted check ruler: same numbers meet). The Porsche GT3 R's offset varies with height instead.
+  The **upper fender / louver plate (N, y 1577-1712)** also meets the door at the shut line and needs more: ~105 px at its top
+  (y ~1600) easing to ~78 at its bottom edge (y 1712), where X's 74 takes over (socal BMW v4 curve
+  `(1600,106),(1712,78),(1721,74),(1900,74)`, confirmed with a check ruler; v6 in-sim showed the stripes ~5 px low; v7's
+  `(1600,111),(1690,88),(1712,80)` aligned them but drew them 1.35x wider (the slope); v8 `(1560,111),(1640,109),(1712,80)` fixed the widths, v9 `(1560,116),(1640,114),(1712,80)` went the wrong
+  way: on N a larger offset moves stripes DOWN in-sim (106/111/116 left them 5/15/20 screen px low); v11 `(1560,101),(1640,99)` "almost", v12 `(1560,97),(1640,95)` worse, v13 `(1560,104),(1640,102)`). Side-panel stripes sit on N, not X.
+  Both offsets are now in `seams.json` as a `"shifts"` entry, so `seams.Car("bmw-m4-gt3").unfold("D")` carries the door
+  design onto X and N (and, mirrored, onto Y and M) for any livery.
+- **The right front fender side Y is NOT the plain mirror of X**: it sits 27 px down-sheet and 8 px along x from X's
+  reflection about 1311.5 (all other panels are within ~4 px; `seams.Car.twin`). A design mirrored with a plain flip lands
+  ~25 px off the door on the right fender, with an unpainted strip along one edge. Mirror with `seams.Car(key).flip(layer)`,
+  which resamples such panels from their twin (socal BMW v6).
 
 - The bumper's sheet edge detours round the roundel on the centre line: the hood and bumper
   don't touch there, so no reading may span it. Read one half and let `mirror_y` add the other.

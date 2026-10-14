@@ -11,13 +11,19 @@ cars/<car>/grid_*.webp  in-sim screenshots of the labelled test grid; grid.tga =
 cars/bmw-m4-gt3/projection/  grid-label correspondences per view (for projecting a reference image)
 tools/grid.py           list PSD layers / write the labelled mapping grid for any car
 tools/seams.py          seam ruler + seams.json readings -> unfolded canvas (LIVERY_GUIDE 4b)
+tools/patterns.py       iRacing's hidden Car Patterns: nose-to-tail gradient = position map, seam pair suggestions (LIVERY_GUIDE 4c)
 tools/install_paint.ps1 install -Project <livery> -Car <car-key> [-Build N | -Final] [-Finish ...] (Windows; no args = help)
-                        -Car <car> -Grid / -Seams / -SeamCheck installs a car's mapping paints
+                        -Car <car> -Grid / -Seams / -SeamCheck installs a car's mapping paints (with a flat matte spec)
 install_gui.bat         (repo root) double-click window over install_paint.ps1: pick livery, car, build/final, finish (tools/install_gui.ps1)
 tools/labelproj.py      project a reference image onto the sheet from grid labels
 tools/ora.py            write layered .ora files (GIMP/Krita) so a livery can be finished by hand
+tools/paintsplit.py     split a finished paint TGA into layers (navy/orange shapes, logos, dark parts) keeping its pixels
+tools/depth.py          palette shades, fading shadow, faded slivers: depth passes over flat shapes (LIVERY_GUIDE 0)
+tools/lowpoly.py        faceted (low-poly) shading texture + feathered cut (LIVERY_GUIDE 14b)
+tools/ora2xcf.py        turn a layered .ora into a GIMP .xcf (groups kept; GIMP's flatten = the TGA)
+tools/mip.py            decode an iRacing spec .mip back to an image (inspect any finished car's finish; LIVERY_GUIDE 13)
 liveries/<livery>/      one folder per livery: livery.py, CLAUDE.md, and per car <car-key>/{out,reference,final,archive}/
-liveries/example/       minimal working livery: start new liveries from this (the only shared one)
+liveries/example/       working livery built on LIVERY_GUIDE section 0: start new liveries from this (the only shared one)
 logos/                  the user's logos (only logos/README.md is shared)
 .venv/                  python env: pip install -r requirements.txt
 ```
@@ -46,6 +52,8 @@ them through it, one step at a time, in plain language:
 
 - **Car keys are `<make>-<model>-<class>`** (e.g. `porsche-992-cup`, `bmw-m4-gt4`); see LIVERY_GUIDE
   section 2. Never reuse a key for another car.
+- **Every livery follows LIVERY_GUIDE section 0** (palette + shades, flat shapes + depth passes, shapes past panel edges,
+  left side once then mirrored, logos as separate layers, grouped .ora/.xcf). Start new liveries from `liveries/example/`.
 - **Map a car before designing on it** (LIVERY_GUIDE section 4). If `cars/<car>/` doesn't exist,
   start with the grid.
 - **Graphics that cross panel seams**: read those seams off the ruler first (LIVERY_GUIDE 4b),
